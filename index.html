@@ -1,1774 +1,609 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบติดตามน้ำบริสุทธิ์ RO - R22 ชั้น 3 </title>
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <!-- ECharts -->
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-    <!-- Flatpickr (ระบบปฏิทิน) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
-
-    <style>
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
-        .card-custom { background-color: #1e293b; border-radius: 20px; border: 1px solid #334155; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); padding: 20px; }
-        .header-title { background: linear-gradient(90deg, #1e293b, #0f172a); border-radius: 20px; border-left: 5px solid #38bdf8; }
-        
-        .digital-value { font-size: 2rem; font-weight: bold; color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
-        .digital-sm { font-size: 1.5rem; font-weight: bold; color: #f8fafc; }
-        .digital-xl { font-size: 2.5rem; font-weight: bold; }
-        
-        /* 3D Thermometer */
-        .thermo-container { display: flex; align-items: center; justify-content: center; gap: 15px; }
-        .thermo-glass { width: 25px; height: 100px; background: linear-gradient(to right, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.2) 30%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.1) 100%); border: 2px solid #475569; border-radius: 15px; position: relative; box-shadow: inset 0px 0px 10px rgba(0, 0, 0, 0.8); }
-        .thermo-fluid { position: absolute; bottom: 2px; left: 2px; right: 2px; background: linear-gradient(to top, #3b82f6, #ef4444); border-radius: 10px; transition: height 1s; }
-        .thermo-bulb { width: 36px; height: 36px; background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb); border-radius: 50%; position: absolute; bottom: -20px; left: -7px; border: 2px solid #475569; box-shadow: inset -3px -3px 6px rgba(0,0,0,0.5); }
-        
-        /* 3D Rotameter */
-        .rotameter-wrapper { display: flex; align-items: center; justify-content: center; position: relative; }
-        .rotameter-scale { display: flex; flex-direction: column; justify-content: space-between; height: 200px; font-size: 0.75rem; color: #94a3b8; text-align: right; padding-right: 4px; font-weight: bold; }
-        .rotameter { width: 45px; height: 200px; background: linear-gradient(to right, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.2) 20%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.15) 80%, rgba(255,255,255,0.05) 100%); border: 2px solid #475569; border-radius: 20px; position: relative; display: flex; justify-content: center; box-shadow: inset 0px 0px 15px rgba(0,0,0,0.9), 3px 3px 10px rgba(0,0,0,0.5); }
-        .rotameter::after { content: ''; position: absolute; top: 2%; left: 15%; width: 15%; height: 96%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%); border-radius: 20px; pointer-events: none; }
-        .rotameter::before { content: ''; position: absolute; left: 10px; height: 100%; width: 5px; border-left: 1px dashed #64748b; }
-        .float-bob { width: 26px; height: 26px; border-radius: 50%; position: absolute; z-index: 2; box-shadow: inset -5px -5px 10px rgba(0,0,0,0.5), 0 4px 6px rgba(0,0,0,0.6); transition: bottom 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        
-        .gauge-chart { width: 100%; height: 200px; }
-        .col-label { font-size: 0.8rem; color: #94a3b8; margin-top: -10px; text-align: center; display: block; line-height: 1.2;}
-        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-
-        .flatpickr-calendar { font-family: 'Segoe UI', sans-serif; }
-        .flatpickr-day.has-data { color: #10b981 !important; font-weight: bold; }
-        .flatpickr-day.no-data-past { color: #ef4444 !important; background-color: rgba(239, 68, 68, 0.1); }
-        
-        .analysis-box { background: rgba(255,255,255,0.02); border-radius: 15px; border: 1px dashed #475569; padding: 15px; min-height: 120px; }
-
-        /* ===== ตารางประวัติ RO (กรอบโค้งมน ตัวอักษรขาว) ===== */
-        /* ===== ส่วนข้อมูลรายเดือน (ตัวเลือกเดือน + กราฟ) ===== */
-        .chart-box { background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 14px 14px 6px; height: 100%; }
-        .chart-title { color: #fff; font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
-        .chart-title small { color: #fff; font-weight: 400; font-size: 0.75rem; opacity: 0.9; }
-        .trend-chart { width: 100%; height: 270px; }
-        .btn-month { width: 32px; height: 32px; flex: 0 0 32px; border-radius: 50%; border: 1px solid #475569; background: #0f172a; color: #fff; display: inline-flex; align-items: center; justify-content: center; padding: 0; transition: all 0.15s; }
-        .btn-month:hover:not(:disabled) { border-color: #38bdf8; color: #38bdf8; }
-        .btn-month:disabled { opacity: 0.35; cursor: not-allowed; }
-        .history-chip { background: rgba(56,189,248,0.12); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.35); border-radius: 999px; padding: 4px 14px; font-size: 0.8rem; white-space: nowrap; }
-        .ro-table-wrap { border-radius: 18px; border: 1px solid #334155; overflow: hidden; background: #0f172a; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
-        .ro-table-scroll { max-height: 420px; overflow: auto; }
-        .ro-table-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-        .ro-table-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
-        .ro-table-scroll::-webkit-scrollbar-track { background: transparent; }
-        .ro-table { width: 100%; min-width: 780px; border-collapse: separate; border-spacing: 0; color: #fff; font-size: 0.92rem; margin: 0; }
-        .ro-table thead th { position: sticky; top: 0; z-index: 2; background: linear-gradient(180deg, #24344d, #1e293b); color: #fff; font-weight: 600; text-align: center; vertical-align: middle; padding: 12px 10px; border-bottom: 2px solid #38bdf8; white-space: nowrap; line-height: 1.25; }
-        .ro-table thead th small { color: #94a3b8; font-weight: 400; font-size: 0.72rem; }
-        .ro-table tbody td { color: #fff; text-align: center; vertical-align: middle; padding: 10px; border-bottom: 1px solid rgba(51,65,85,0.55); background: transparent; transition: background 0.15s; }
-        .ro-table tbody tr:nth-child(even) td { background: rgba(148,163,184,0.04); }
-        .ro-table tbody tr:hover td { background: rgba(56,189,248,0.08); }
-        .ro-table tbody tr.is-selected td { background: rgba(56,189,248,0.14); }
-        .ro-table tbody tr.is-selected td:first-child { box-shadow: inset 3px 0 0 #38bdf8; }
-        .ro-table tbody tr:last-child td { border-bottom: none; }
-        .st-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; background: #475569; }
-        .st-dot.ok { background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.8); }
-        .st-dot.bad { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.8); }
-        .st-dot.warn { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.8); }
-        .ro-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.78rem; color: #94a3b8; }
-        .act-group { display: inline-flex; gap: 6px; }
-        .btn-act { width: 32px; height: 32px; border-radius: 10px; border: 1px solid; background: transparent; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: all 0.15s; cursor: pointer; padding: 0; }
-        .btn-act.view { color: #38bdf8; border-color: rgba(56,189,248,0.45); }
-        .btn-act.view:hover { background: #38bdf8; color: #0f172a; }
-        .btn-act.edit { color: #fbbf24; border-color: rgba(251,191,36,0.45); }
-        .btn-act.edit:hover { background: #fbbf24; color: #0f172a; }
-        .btn-act.del { color: #f87171; border-color: rgba(248,113,113,0.45); }
-        .btn-act.del:hover { background: #ef4444; color: #fff; }
-
-        /* ===== หน้าต่าง (Modal) ===== */
-        .ro-modal .modal-content { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-        .ro-modal .modal-header, .ro-modal .modal-footer { border-color: #334155; }
-        .ro-input, .ro-input:focus { background-color: #0f172a; color: #fff; border-color: #475569; }
-        .ro-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 0.2rem rgba(56,189,248,0.2); }
-        .ro-input[readonly] { color: #94a3b8; background-color: #111827; }
-        .ro-input::placeholder { color: #64748b; }
-        .ro-input option { background: #0f172a; color: #fff; }
-        .view-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
-        .view-chip { background: #0f172a; border: 1px solid #334155; border-radius: 14px; padding: 10px 12px; }
-        .view-chip .lbl { font-size: 0.75rem; color: #94a3b8; }
-        .view-chip .val { font-size: 1.25rem; font-weight: 700; color: #fff; }
-        .view-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
-        .view-item { background: rgba(15,23,42,0.7); border: 1px solid rgba(51,65,85,0.7); border-radius: 12px; padding: 8px 12px; }
-        .view-label { font-size: 0.75rem; color: #94a3b8; }
-        .view-value { color: #fff; font-weight: 600; word-break: break-word; }
-
-        /* ===== ข้อความแจ้งเตือนมุมจอ ===== */
-        #toastBox { position: fixed; right: 16px; bottom: 16px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; max-width: calc(100vw - 32px); }
-        .ro-toast { display: flex; align-items: center; gap: 10px; background: #1e293b; color: #fff; border: 1px solid #334155; border-left: 4px solid #10b981; border-radius: 12px; padding: 10px 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-size: 0.9rem; animation: toastIn 0.25s ease; transition: opacity 0.3s, transform 0.3s; }
-        .ro-toast.danger { border-left-color: #ef4444; }
-        .ro-toast.warning { border-left-color: #f59e0b; }
-        .ro-toast.info { border-left-color: #38bdf8; }
-        .ro-toast.hide { opacity: 0; transform: translateX(20px); }
-        @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-
-        /* ===== ผลเพาะเชื้อ ===== */
-        .cs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
-        .cs-year-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; color: #94a3b8; font-size: 0.85rem; font-weight: 600; margin-top: 6px; }
-        .cs-year-head::after { content: ''; flex: 1; height: 1px; background: #334155; }
-        .cs-year-head:first-child { margin-top: 0; }
-        .cs-tile { position: relative; height: 88px; width: 100%; border-radius: 14px; border: 1px solid #334155; background: rgba(15,23,42,0.75); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s; padding: 6px; }
-        .cs-tile i { font-size: 1.45rem; color: #22c55e; transition: transform 0.2s; }
-        .cs-tile .cs-label { font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-        .cs-tile:hover, .cs-tile:focus-visible { border-color: #198754; background: rgba(25,135,84,0.15); transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.35); outline: none; }
-        .cs-tile:hover i { transform: scale(1.1); }
-        .cs-tile.is-latest { border-color: rgba(34,197,94,0.6); }
-        .cs-new { position: absolute; top: 6px; right: 6px; font-size: 0.62rem; line-height: 1; background: #198754; color: #fff; border-radius: 999px; padding: 3px 7px; }
-        @media (max-width: 400px) { .cs-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; } .cs-tile { height: 80px; } }
-        .cs-file { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; margin-bottom: 8px; border-radius: 12px; background: rgba(148,163,184,0.08); border: 1px solid rgba(148,163,184,0.2); text-decoration: none; color: #fff; transition: all 0.15s; }
-        .cs-file:hover { border-color: #198754; background: rgba(25,135,84,0.15); color: #fff; }
-        .cs-file-btn { font-size: 0.75rem; background: #198754; color: #fff; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
-        .cs-file-link { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; color: #fff; text-decoration: none; }
-        .cs-file-link:hover { color: #86efac; }
-        .cs-file-meta { font-size: 0.75rem; color: #94a3b8; white-space: nowrap; }
-        .cs-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 22px 12px; margin: 0; border: 2px dashed #475569; border-radius: 16px; background: rgba(15,23,42,0.6); color: #fff; cursor: pointer; text-align: center; transition: all 0.15s; }
-        .cs-drop:hover, .cs-drop.drag { border-color: #22c55e; background: rgba(34,197,94,0.08); }
-        .cs-up-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin-bottom: 6px; border-radius: 12px; background: rgba(148,163,184,0.08); border: 1px solid rgba(148,163,184,0.2); color: #fff; font-size: 0.88rem; }
-        .cs-up-item .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .cs-st { font-size: 0.75rem; white-space: nowrap; }
+    <title>ระบบตรวจเช็คระบบน้ำ RO</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <style type="text/css">
+        :root {
+            --mint-main: #8de3c7;
+            --mint-dark: #3cc8a3;
+            --mint-light: #c2f5e9;
+            --mint-bg: #e6fdfa;
+            --mint-gradient: linear-gradient(135deg, #b0f4e6 0%, #94e6c8 100%);
+            --mint-accent: #39b7b1;
+            --mint-outline: #44bda3;
+            --mint-btn: #6de7c2;
+            --mint-btn-shadow: rgba(60, 200, 163, 0.18);
+            --mint-btn-shadow2: rgba(60, 200, 163, 0.10);
+            --mint-label: #25675a;
+            --mint-title: #25675a;
+            --mint-white: #fff;
+        }
+        body {
+            font-family: Kanit, sans-serif;
+            background: var(--mint-bg);
+        }
+        label, .form-label {
+            color: var(--mint-label);
+            font-weight: 500;
+        }
+        .container {
+            max-width: 900px;
+            background: var(--mint-gradient);
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 32px 0 rgba(60, 200, 163, 0.10), 0 1.5px 6px 0 rgba(0,0,0,0.04);
+            padding: 2.5rem 2rem 1.5rem 2rem;
+            margin-top: 2.5rem;
+        }
+        .three-d-btn {
+            background: linear-gradient(135deg, var(--mint-btn), var(--mint-accent));
+            color: var(--mint-white); 
+            font-weight: bold; 
+            border: none; 
+            border-radius: 2rem;
+            box-shadow: 0 6px 24px 0 var(--mint-btn-shadow), 0 1.5px 4px 0 var(--mint-btn-shadow2);
+            transition: all 0.2s ease; 
+            padding: 14px 0;
+            letter-spacing: 0.5px;
+        }
+        .three-d-btn:active {
+            box-shadow: 0 2px 8px 0 var(--mint-btn-shadow2), 0 1px 2px 0 var(--mint-btn-shadow2);
+            transform: translateY(2px);
+        }
+        .form-radio-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .form-radio-group label {
+            margin-bottom: 0;
+            color: var(--mint-label);
+            font-weight: normal;
+        }
+        .profile-img {
+            width: 70px; height: 70px; border-radius: 100px; object-fit: cover;
+            box-shadow: 0 2px 10px #8de3c7aa; border: 3px solid var(--mint-white); margin-bottom: 12px;
+        }
+        .profile-box { text-align: center; }
+        .h2, .h1, .h3, .h4, .h5, .h6, .text-light, .text-title {
+            color: var(--mint-title) !important;
+            font-weight: bold;
+            letter-spacing: 0.7px;
+            text-shadow: 0 1px 8px #b0f4e640;
+        }
+        /* กล่องข้อความพื้นหลังขาวและตัวอักษรสีดำ */
+        .form-control, .form-select {
+            background: #fff !important;
+            border: 1.5px solid var(--mint-outline);
+            border-radius: 1.5rem;
+            color: #000 !important;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: none;
+            transition: border 0.2s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--mint-accent);
+            box-shadow: 0 0 0 2px #b0f4e6a0;
+            background: #fff !important;
+            color: #000 !important;
+        }
+        .invalid-feedback {
+            color: #e53e3e !important;
+        }
+        .bi {
+            vertical-align: middle;
+            color: var(--mint-accent);
+        }
+        .row.gx-3 > [class^="col-"], .row.gy-2 > [class^="col-"] {
+            margin-bottom: 1.15rem;
+        }
+        .form-select {
+            background-image: url('data:image/svg+xml;utf8,<svg fill="rgba(60,200,163,0.9)" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 8.293a1 1 0 011.414 0L10 9.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>');
+        }
+        ::placeholder {
+            color: #888;
+            opacity: 1;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #b0f4e6; border-radius: 8px; }
+        @media (max-width: 576px) {
+            .container { padding: 1.1rem 0.3rem; }
+        }
     </style>
-</head>
-<body class="p-3 p-md-4">
-
-    <!-- Loading Screen -->
-    <div id="loadingOverlay">
-        <div class="spinner-border text-info" style="width: 3rem; height: 3rem;" role="status"></div>
-        <h4 class="mt-3 text-info">กำลังโหลดข้อมูลระบบน้ำ...</h4>
-    </div>
-
-    <!-- Header & Filter -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="header-title p-3 p-md-4 d-flex flex-column flex-lg-row justify-content-between align-items-lg-center shadow gap-3">
-                <div>
-                    <h3 class="m-0 text-white"><i class="fas fa-microscope text-info me-3"></i>Dashboard ระบบน้ำบริสุทธิ์ RO</h3>
-                    <h6 class="text-secondary mt-2 mb-0">สถาบันบำราศนราดูร (Hemodialysis RO System)</h6>
-                </div>
-                <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center">
-                    <div class="input-group" style="width: 280px;">
-                        <span class="input-group-text bg-dark text-info border-secondary"><i class="fas fa-calendar-alt"></i></span>
-                        <input type="text" id="dateFilter" class="form-control bg-dark text-white border-secondary" placeholder="คลิกเลือกวันที่...">
-                    </div>
-                    <div class="text-lg-end min-w-150">
-                        <span class="badge bg-success mb-1"><i class="fas fa-check-circle"></i> ข้อมูลอัปเดต</span><br>
-                        <small class="text-muted">ผู้ตรวจสอบ: <span id="valOperator" class="text-info fw-bold">-</span></small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ปลั๊กอินวิเคราะห์ (TRT Rules) -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card-custom border-info">
-                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-secondary">
-                    <h5 class="text-info m-0"><i class="fas fa-clipboard-check me-2"></i>ปลั๊กอินวิเคราะห์ระบบน้ำ (TRT Analysis)</h5>
-                </div>
-                <div id="analysisResult" class="analysis-box"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- โซนที่ 1: คุณภาพน้ำ (Water Quality) -->
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3 col-lg-2"><div class="card-custom text-center h-100"><small class="text-secondary">ORP น้ำเข้า</small><div class="digital-sm text-warning mt-1"><span id="valOrp">0</span> <span class="fs-6">mV</span></div></div></div>
-        <div class="col-6 col-md-3 col-lg-2"><div class="card-custom text-center h-100"><small class="text-secondary">Chlorine น้ำดิบ {0.3-0.5}</small><div class="digital-sm text-warning mt-1"><span id="valCl">-</span> <span class="fs-6">ppm</span></div></div></div>
-        <div class="col-6 col-md-3 col-lg-2"><div class="card-custom text-center h-100"><small class="text-secondary">RAW Cond {< 500}</small><div class="digital-sm text-warning mt-1"><span id="valCondRaw">0</span> <span class="fs-6">µS</span></div></div></div>
-        <div class="col-6 col-md-3 col-lg-3"><div class="card-custom text-center border-info h-100"><small class="text-info fw-bold">Conductivity RO {< 10}</small><div class="digital-value mt-1"><span id="valCondRo">0.00</span> <span class="fs-5">µS/cm</span></div></div></div>
-        <div class="col-12 col-lg-3">
-            <div class="card-custom h-100 d-flex flex-column justify-content-center">
-                <small class="text-secondary text-center d-block">TEMP. B/T {< 35 c}</small>
-                <div class="thermo-container mt-2">
-                    <div class="thermo-glass"><div id="thermoFluid" class="thermo-fluid" style="height: 0%;"></div><div class="thermo-bulb"></div></div>
-                    <div><div class="digital-sm text-white"><span id="valTemp">0</span><span class="fs-6">°C</span></div></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- โซนที่ 2: แรงดันระบบก่อนกรอง + การทำงาน & สารเคมี -->
-    <div class="row g-3 mb-4">
-        <div class="col-lg-8">
-            <div class="card-custom h-100">
-                <h6 class="text-secondary mb-3"><i class="fas fa-filter me-2"></i>แรงดันระบบกรองเบื้องต้น (Pre-Treatment)</h6>
-                <div class="row g-2">
-                    <div class="col-6 col-md-4"><div id="gFeed" class="gauge-chart"></div><span class="col-label">Feed pump Pressure<br>{> 40 psi}</span></div>
-                    <div class="col-6 col-md-4"><div id="gSand" class="gauge-chart"></div><span class="col-label">Sand pressure<br>{psi}</span></div>
-                    <div class="col-6 col-md-4"><div id="gC1" class="gauge-chart"></div><span class="col-label">Carbon 1 Pressure<br>{psi}</span></div>
-                    <div class="col-6 col-md-4"><div id="gC2" class="gauge-chart"></div><span class="col-label">Carbon 2 Pressure<br>{psi}</span></div>
-                    <div class="col-6 col-md-4"><div id="gSoft" class="gauge-chart"></div><span class="col-label">Softener pressure<br>{psi}</span></div>
-                    <div class="col-6 col-md-4"><div id="gCart" class="gauge-chart"></div><span class="col-label">Cartridge Filter<br>{psi}</span></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card-custom h-100">
-                <h6 class="text-secondary mb-3"><i class="fas fa-clipboard-check me-2"></i>การทำงาน & สารเคมี</h6>
-                <table class="table table-dark table-sm table-borderless align-middle m-0" style="font-size: 0.9rem;">
-                    <tbody>
-                        <tr><td class="text-secondary">Sand Clock</td><td class="text-end"><span id="valSandClk" class="badge bg-success">-</span></td></tr>
-                        <tr><td class="text-secondary">Carbon 1 Clock</td><td class="text-end"><span id="valC1Clk" class="badge bg-success">-</span></td></tr>
-                        <tr><td class="text-secondary">Carbon 1 Chlorine test {<0.1}</td><td class="text-end"><span id="valC1Cl" class="text-white">-</span></td></tr>
-                        <tr><td class="text-secondary">Carbon 2 Clock</td><td class="text-end"><span id="valC2Clk" class="badge bg-success">-</span></td></tr>
-                        <tr><td class="text-secondary">Carbon 2 Chlorine test {<0.1}</td><td class="text-end"><span id="valC2Cl" class="text-white">-</span></td></tr>
-                        <tr><td class="text-secondary">Softener Clock</td><td class="text-end"><span id="valSoftClk" class="badge bg-success">-</span></td></tr>
-                        <tr><td class="text-secondary">Softener Brine Tank (12.5 kg)</td><td class="text-end text-info fw-bold" id="valBrine">-</td></tr>
-                        <tr><td class="text-secondary">Softener Aquadur test {<17.1}</td><td class="text-end"><span id="valAqua" class="text-white">-</span></td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- โซนที่ 3: ระบบ RO, อัตราการไหล และ ประสิทธิภาพ -->
-    <div class="row g-3 mb-4">
-        <div class="col-lg-5">
-            <div class="card-custom h-100 d-flex flex-column">
-                <h6 class="text-secondary mb-3"><i class="fas fa-tachometer-alt me-2"></i>แรงดันระบบ RO</h6>
-                <div class="row flex-grow-1 align-items-center">
-                    <div class="col-6 col-md-4"><div id="gRoPump" class="gauge-chart"></div><span class="col-label text-info">RO Pressure Pump</span></div>
-                    <div class="col-6 col-md-4"><div id="gConcPress" class="gauge-chart"></div><span class="col-label text-warning">Concentrate Pressure<br>{80-180 psi}</span></div>
-                    <div class="col-12 col-md-4"><div id="gPermPress" class="gauge-chart"></div><span class="col-label text-success">Permeate Pressure<br>{80-180 psi}</span></div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-4">
-            <div class="card-custom h-100">
-                <h6 class="text-secondary mb-3"><i class="fas fa-water me-2"></i>อัตราการไหล (LPM)</h6>
-                <div class="d-flex justify-content-around align-items-center mt-2">
-                    <div class="text-center">
-                        <div class="rotameter-wrapper">
-                            <div class="rotameter-scale"><span>40-</span><span>30-</span><span>20-</span><span>10-</span><span>0-</span></div>
-                            <div class="rotameter"><div id="bobPermeate" class="float-bob" style="background: radial-gradient(circle at 30% 30%, #38bdf8, #0369a1); bottom: 0%;"></div></div>
-                        </div>
-                        <span class="col-label mt-2">Permeate Flow<br>{18-35 LPM}</span>
-                        <h4 class="mt-1 text-info"><span id="valPermFlow">0</span></h4>
-                    </div>
-                    <div class="text-center">
-                        <div class="rotameter-wrapper">
-                            <div class="rotameter-scale"><span>40-</span><span>30-</span><span>20-</span><span>10-</span><span>0-</span></div>
-                            <div class="rotameter"><div id="bobReject" class="float-bob" style="background: radial-gradient(circle at 30% 30%, #fcd34d, #b45309); bottom: 0%;"></div></div>
-                        </div>
-                        <span class="col-label mt-2">Concentrate Flow<br>{18-35 LPM}</span>
-                        <h4 class="mt-1 text-warning"><span id="valConcFlow">0</span></h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 d-flex flex-column gap-3">
-            <div class="card-custom text-center h-50 d-flex flex-column justify-content-center">
-                <small class="text-secondary">% Salt Rejection {> 90%}</small>
-                <div class="digital-xl text-success mt-2"><span id="valRej">0.00</span>%</div>
-            </div>
-            <div class="card-custom text-center h-50 d-flex flex-column justify-content-center">
-                <small class="text-secondary">% Recovery {45-55%}</small>
-                <div class="digital-xl text-warning mt-2"><span id="valRec">0.00</span>%</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- โซนที่ 4: ข้อมูลรายเดือน (กราฟแนวโน้ม + ตารางประวัติ ใช้ตัวเลือกเดือนเดียวกัน) -->
-    <div class="row g-3 mb-4">
-        <div class="col-12">
-            <div class="card-custom">
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-3 border-bottom border-secondary">
-                    <h5 class="text-white m-0"><i class="fas fa-calendar-days text-info me-2"></i>ข้อมูลรายเดือน</h5>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <button type="button" class="btn-month" id="monthPrev" title="เดือนก่อนหน้า"><i class="fas fa-chevron-left"></i></button>
-                        <select id="monthFilter" class="form-select form-select-sm ro-input rounded-pill px-3" style="width: 200px;" aria-label="เลือกเดือน"></select>
-                        <button type="button" class="btn-month" id="monthNext" title="เดือนถัดไป"><i class="fas fa-chevron-right"></i></button>
-                        <span id="historyMonthLabel" class="history-chip">-</span>
-                    </div>
-                </div>
-
-                <div class="row g-3 mb-4">
-                    <div class="col-lg-6">
-                        <div class="chart-box">
-                            <div class="chart-title"><i class="fas fa-chart-line me-2" style="color: #22c55e;"></i>กราฟแนวโน้ม RAW Conductivity <small>{&lt; 500 µS/cm}</small></div>
-                            <div id="rawChart" class="trend-chart"></div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="chart-box">
-                            <div class="chart-title"><i class="fas fa-chart-line me-2" style="color: #38bdf8;"></i>กราฟแนวโน้ม Conductivity RO <small>{&lt; 10 µS/cm}</small></div>
-                            <div id="monthlyChart" class="trend-chart"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="chart-title mb-2"><i class="fas fa-table me-2 text-info"></i>ประวัติตรวจเช็คระบบน้ำ RO</div>
-                <div class="ro-table-wrap">
-                    <div class="ro-table-scroll">
-                        <table class="ro-table">
-                            <thead>
-                                <tr>
-                                    <th>วันที่</th>
-                                    <th>Cond RO<br><small>{&lt; 10 µS/cm}</small></th>
-                                    <th>% Rejection<br><small>{&gt; 90%}</small></th>
-                                    <th>% Recovery<br><small>{45-55%}</small></th>
-                                    <th>Flow (Perm/Conc)<br><small>{18-35 LPM}</small></th>
-                                    <th>ผู้ตรวจ</th>
-                                    <th>จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="historyTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="ro-legend mt-2">
-                    <span><span class="st-dot ok"></span>ผ่านเกณฑ์</span>
-                    <span><span class="st-dot bad"></span>ไม่ผ่านเกณฑ์</span>
-                    <span><span class="st-dot warn"></span>นอกช่วงที่แนะนำ</span>
-                    <span><span class="st-dot"></span>ไม่มีข้อมูล</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- โซนที่ 6: ผลเพาะเชื้อระบบน้ำ -->
-    <div class="row g-3">
-        <div class="col-12">
-            <div class="card-custom border-success p-3 p-md-4" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
-                    <div>
-                        <h5 class="text-white m-0"><i class="fa-solid fa-microscope text-success me-2"></i>ผลเพาะเชื้อระบบน้ำ <span id="csCount" class="history-chip ms-2 align-middle d-none"></span></h5>
-                        <small class="text-muted">คลิกเลือกเดือนเพื่อดู แก้ไข หรือลบไฟล์</small>
-                    </div>
-                    <div class="d-flex gap-2 flex-wrap flex-md-nowrap align-items-center">
-                        <select id="csMonthFilter" class="form-select form-select-sm bg-dark text-white border-secondary rounded-pill px-3" style="flex: 1 1 150px; max-width: 180px; min-width: 0;">
-                            <option value="all">ทุกปี</option>
-                        </select>
-                        <input type="text" id="csSearchInput" placeholder="🔍 ค้นหา เช่น มิ.ย." class="form-control form-control-sm bg-dark text-white border-secondary rounded-pill px-3" style="flex: 1 1 140px; max-width: 170px; min-width: 0;" />
-                        <button type="button" id="csAddBtn" class="btn btn-sm btn-success rounded-pill px-3 text-nowrap"><i class="fa-solid fa-plus me-1"></i> เพิ่มไฟล์</button>
-                    </div>
-                </div>
-
-                <div id="csLoader" class="text-center py-3">
-                    <div class="spinner-border spinner-border-sm text-success" role="status"></div>
-                    <span class="text-success ms-2 font-monospace">กำลังโหลดโฟลเดอร์...</span>
-                </div>
-
-                <div id="csFolderGroups" class="cs-grid"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== Modal: รายการไฟล์ผลเพาะเชื้อ ===== -->
-    <div class="modal fade ro-modal" id="csFileModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-success bg-opacity-10 py-2">
-                    <h6 class="modal-title text-success fw-bold m-0 text-truncate" id="csModalTitle"><i class="fa-solid fa-folder-open me-2"></i>รายการรายงาน</h6>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-3" style="max-height: 60vh; overflow-y: auto;">
-                    <div id="csModalLoading" class="text-center py-3">
-                        <div class="spinner-border spinner-border-sm text-success" role="status"></div>
-                        <p class="text-muted mt-1 small">กำลังดึงรายการไฟล์...</p>
-                    </div>
-                    <div id="csFileList"></div>
-                    <div id="csNoFiles" class="text-center py-4 text-muted d-none">
-                        <i class="fa-solid fa-folder-open fa-2x mb-2 text-secondary"></i>
-                        <p class="small mb-0">ไม่พบไฟล์เอกสารในโฟลเดอร์นี้</p>
-                    </div>
-                </div>
-                <div class="modal-footer py-2">
-                    <button type="button" id="csAddHereBtn" class="btn btn-sm btn-success rounded-pill px-3 me-auto"><i class="fa-solid fa-plus me-1"></i> เพิ่มไฟล์ในเดือนนี้</button>
-                    <a id="csOpenDrive" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success rounded-pill px-3">
-                        <i class="fa-brands fa-google-drive me-1"></i> เปิดโฟลเดอร์ใน Google Drive
-                    </a>
-                    <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">ปิด</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== Modal: เพิ่มไฟล์ผลเพาะเชื้อ ===== -->
-    <div class="modal fade ro-modal" id="csUploadModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-success"><i class="fa-solid fa-cloud-arrow-up me-2"></i>เพิ่มไฟล์ผลเพาะเชื้อ</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-2">
-                        <div class="col-7 col-md-4">
-                            <label class="form-label small text-info mb-1">เดือนของผลเพาะเชื้อ</label>
-                            <select id="csUpMonth" class="form-select form-select-sm ro-input"></select>
-                        </div>
-                        <div class="col-5 col-md-3">
-                            <label class="form-label small text-info mb-1">ปี (พ.ศ.)</label>
-                            <select id="csUpYear" class="form-select form-select-sm ro-input"></select>
-                        </div>
-                        <div class="col-12 col-md-5 d-flex align-items-end">
-                            <div id="csUpHint" class="small text-white pb-1"></div>
-                        </div>
-                    </div>
-                    <label id="csDrop" class="cs-drop mt-3" for="csUpFiles">
-                        <i class="fa-solid fa-file-arrow-up fa-2x text-success"></i>
-                        <span class="fw-semibold">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</span>
-                        <span class="cs-file-meta">PDF หรือรูปภาพ ไม่เกิน 10 MB ต่อไฟล์ เลือกได้หลายไฟล์</span>
-                    </label>
-                    <input type="file" id="csUpFiles" class="d-none" multiple accept="application/pdf,image/*">
-                    <div id="csUpList" class="mt-3"></div>
-                    <div class="row g-2 mt-1">
-                        <div class="col-12 col-md-5">
-                            <label class="form-label small text-info mb-1">ผู้อัปโหลด</label>
-                            <input type="text" id="csUpBy" class="form-control form-control-sm ro-input" placeholder="ชื่อ-สกุล ผู้อัปโหลด">
-                        </div>
-                        <div class="col-12 col-md-7">
-                            <label class="form-label small text-info mb-1">หมายเหตุ (ไม่บังคับ)</label>
-                            <input type="text" id="csUpNote" class="form-control form-control-sm ro-input" placeholder="เช่น ผลจากห้องปฏิบัติการ รอบประจำเดือน">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">ปิด</button>
-                    <button type="button" id="csUpBtn" class="btn btn-sm btn-success rounded-pill px-4 fw-bold"><i class="fa-solid fa-cloud-arrow-up me-1"></i> อัปโหลด</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== Modal: แก้ไขไฟล์ผลเพาะเชื้อ ===== -->
-    <div class="modal fade ro-modal" id="csEditModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-warning"><i class="fas fa-pen me-2"></i>แก้ไขไฟล์ผลเพาะเชื้อ</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <label class="form-label small text-info mb-1">ชื่อไฟล์</label>
-                    <div class="input-group input-group-sm">
-                        <input type="text" id="csEdName" class="form-control ro-input">
-                        <span id="csEdExt" class="input-group-text bg-dark text-white border-secondary">.pdf</span>
-                    </div>
-                    <div class="row g-2 mt-2">
-                        <div class="col-7 col-md-4">
-                            <label class="form-label small text-info mb-1">เดือนของผลเพาะเชื้อ</label>
-                            <select id="csEdMonth" class="form-select form-select-sm ro-input"></select>
-                        </div>
-                        <div class="col-5 col-md-3">
-                            <label class="form-label small text-info mb-1">ปี (พ.ศ.)</label>
-                            <select id="csEdYear" class="form-select form-select-sm ro-input"></select>
-                        </div>
-                        <div class="col-12 col-md-5 d-flex align-items-end">
-                            <div id="csEdFolderHint" class="small text-secondary pb-1"></div>
-                        </div>
-                    </div>
-                    <label class="form-label small text-info mb-1 mt-3">เปลี่ยนเป็นไฟล์ใหม่ (ไม่บังคับ)</label>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <label for="csEdFile" class="btn btn-sm btn-outline-light rounded-pill px-3 mb-0"><i class="fa-solid fa-file-arrow-up me-1"></i> เลือกไฟล์ใหม่</label>
-                        <button type="button" id="csEdFileClear" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-none">ไม่เปลี่ยนไฟล์</button>
-                    </div>
-                    <input type="file" id="csEdFile" class="d-none" accept="application/pdf,image/*">
-                    <div id="csEdFileInfo" class="small mt-1 text-secondary">ใช้เมื่ออัปโหลดไฟล์ผิด ไฟล์เดิมจะถูกย้ายไปถังขยะของ Google Drive</div>
-                    <hr class="border-secondary my-3">
-                    <div class="row g-2">
-                        <div class="col-12 col-md-5">
-                            <label class="form-label small text-info mb-1">ผู้แก้ไข</label>
-                            <input type="text" id="csEdBy" class="form-control form-control-sm ro-input" placeholder="ชื่อ-สกุล ผู้แก้ไข">
-                        </div>
-                        <div class="col-12 col-md-7">
-                            <label class="form-label small text-info mb-1">เหตุผลการแก้ไข (ไม่บังคับ)</label>
-                            <input type="text" id="csEdReason" class="form-control form-control-sm ro-input" placeholder="เช่น อัปโหลดผิดเดือน">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">ยกเลิก</button>
-                    <button type="button" id="csEdSaveBtn" class="btn btn-sm btn-warning rounded-pill px-4 fw-bold"><i class="fas fa-save me-1"></i> บันทึกการแก้ไข</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== Modal: ยืนยันการลบไฟล์ผลเพาะเชื้อ ===== -->
-    <div class="modal fade ro-modal" id="csDeleteModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-danger"><i class="fas fa-trash me-2"></i>ลบไฟล์ผลเพาะเชื้อ</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="csDelSummary" class="mb-3"></div>
-                    <div class="alert alert-danger bg-transparent border-danger text-danger small py-2 mb-3">
-                        <i class="fas fa-exclamation-triangle me-1"></i> ไฟล์จะถูกย้ายไปถังขยะของ Google Drive (กู้คืนได้ภายใน 30 วัน) และบันทึกไว้ในชีต <b>LOG_ผลเพาะเชื้อ</b>
-                    </div>
-                    <label class="form-label small text-info mb-1">ผู้ลบ</label>
-                    <input type="text" id="csDelBy" class="form-control form-control-sm ro-input mb-2" placeholder="ชื่อ-สกุล ผู้ลบ">
-                    <label class="form-label small text-info mb-1">เหตุผลการลบ (ไม่บังคับ)</label>
-                    <input type="text" id="csDelReason" class="form-control form-control-sm ro-input" placeholder="เช่น อัปโหลดซ้ำ">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">ยกเลิก</button>
-                    <button type="button" id="csDelConfirmBtn" class="btn btn-sm btn-danger rounded-pill px-4 fw-bold"><i class="fas fa-trash me-1"></i> ลบไฟล์</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== Modal: ดูข้อมูลทั้งหมดของรายการ ===== -->
-    <div class="modal fade ro-modal" id="viewModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-info" id="viewModalTitle"><i class="fas fa-eye me-2"></i>ข้อมูลทั้งหมด</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="viewModalBody"></div>
-                <div class="modal-footer">
-                    <button type="button" id="viewToDashBtn" class="btn btn-sm btn-outline-info rounded-pill px-3"><i class="fas fa-gauge-high me-1"></i> แสดงบนแดชบอร์ด</button>
-                    <button type="button" id="viewEditBtn" class="btn btn-sm btn-warning rounded-pill px-3"><i class="fas fa-pen me-1"></i> แก้ไข</button>
-                    <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">ปิด</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== Modal: แก้ไขข้อมูล ===== -->
-    <div class="modal fade ro-modal" id="editModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-warning" id="editModalTitle"><i class="fas fa-pen me-2"></i>แก้ไขข้อมูล</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-2" id="editFields"></div>
-                    <hr class="border-secondary my-3">
-                    <div class="row g-2">
-                        <div class="col-12 col-md-5">
-                            <label class="form-label small text-info mb-1">ผู้แก้ไข</label>
-                            <input type="text" id="editBy" class="form-control form-control-sm ro-input" placeholder="ชื่อ-สกุล ผู้แก้ไข">
-                        </div>
-                        <div class="col-12 col-md-7">
-                            <label class="form-label small text-info mb-1">เหตุผลการแก้ไข (ไม่บังคับ)</label>
-                            <input type="text" id="editReason" class="form-control form-control-sm ro-input" placeholder="เช่น บันทึกค่าผิดช่อง">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">ยกเลิก</button>
-                    <button type="button" id="editSaveBtn" class="btn btn-sm btn-warning rounded-pill px-4 fw-bold"><i class="fas fa-save me-1"></i> บันทึกการแก้ไข</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== Modal: ยืนยันการลบ ===== -->
-    <div class="modal fade ro-modal" id="deleteModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-danger"><i class="fas fa-trash me-2"></i>ยืนยันการลบข้อมูล</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="deleteSummary" class="mb-3"></div>
-                    <div class="alert alert-danger bg-transparent border-danger text-danger small py-2 mb-3">
-                        <i class="fas fa-exclamation-triangle me-1"></i> ข้อมูลจะถูกลบออกจาก Google Sheet ค่าเดิมจะถูกเก็บไว้ในชีต <b>LOG_แก้ไขข้อมูล</b>
-                    </div>
-                    <label class="form-label small text-info mb-1">ผู้ลบข้อมูล</label>
-                    <input type="text" id="delBy" class="form-control form-control-sm ro-input mb-2" placeholder="ชื่อ-สกุล ผู้ลบ">
-                    <label class="form-label small text-info mb-1">เหตุผลการลบ (ไม่บังคับ)</label>
-                    <input type="text" id="delReason" class="form-control form-control-sm ro-input" placeholder="เช่น บันทึกซ้ำ">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">ยกเลิก</button>
-                    <button type="button" id="deleteConfirmBtn" class="btn btn-sm btn-danger rounded-pill px-4 fw-bold"><i class="fas fa-trash me-1"></i> ลบข้อมูล</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- กล่องข้อความแจ้งเตือน -->
-    <div id="toastBox"></div>
-
-    <!-- Bootstrap JS (จำเป็นสำหรับหน้าต่าง Modal) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Script รวมการทำงานทั้งหมด -->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8aVFEjLhmdaTHqXkTTvVzCtarch9qRuJqhNYDrIV4iye2Ha2MIaMtibqf4nnABkM/exec";
-        const CS_SCRIPT_URL = SCRIPT_URL; // ผลเพาะเชื้อใช้ Apps Script ตัวเดียวกับแดชบอร์ด (โฟลเดอร์ ROR223)
-        const CS_MAX_FILE_MB = 10;
-        
-        let globalData = [];
-        let currentDayData = null;
-        let currentSelectedDate = null;
-        let availableDates = [];
-        let gauges = {};
-        let monthlyChart;
-        let rawChart;
-        let currentMonthKey = null;
-        let availableMonths = [];
-        let fp = null;
-        let allCSFolders = [];
-        let editPin = '';
-        let lastActor = '';
-        let editingUid = null;
-        let deletingUid = null;
-        let csCurrentFolder = null;
-        let csCurrentFiles = [];
-        let csEditingFile = null;
-        let csDeletingFile = null;
-        let csUploadItems = [];
-        let csUploading = false;
-        let csReturnToList = false;
-        const csMonthNamesFull = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
-        const TH_MONTH_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
-
-        // ==========================================
-        // ตัวช่วยทั่วไป
-        // ==========================================
-        function esc(s) {
-            return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-        }
-        function stripHtml(s) { return String(s || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
-        function fmtNum(v) {
-            if (v === null || v === undefined || v === '') return '-';
-            const n = Number(v);
-            if (isNaN(n)) return String(v);
-            return Number.isInteger(n) ? String(n) : n.toFixed(2);
-        }
-        function formatThaiDate(dateStr) {
-            if (!dateStr) return '-';
-            const [y, m, d] = dateStr.split('-').map(Number);
-            return `${d} ${TH_MONTH_SHORT[m - 1] || m} ${y + 543}`;
-        }
-        function isTsKey(k) { return /ประทับเวลา|timestamp/i.test(k); }
-        function displayRaw(v) { return (v === null || v === undefined || v === '') ? '-' : v; }
-
-        async function fetchJson(url, options) {
-            const res = await fetch(url, options);
-            const text = await res.text();
-            try { return JSON.parse(text); }
-            catch (e) { throw new Error('เซิร์ฟเวอร์ไม่ได้ตอบเป็น JSON: ' + stripHtml(text).slice(0, 300)); }
-        }
-
-        function showToast(msg, type = 'success') {
-            const icons = { success: 'fa-check-circle text-success', danger: 'fa-times-circle text-danger', warning: 'fa-exclamation-triangle text-warning', info: 'fa-info-circle text-info' };
-            const el = document.createElement('div');
-            el.className = `ro-toast ${type}`;
-            el.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${esc(msg)}</span>`;
-            document.getElementById('toastBox').appendChild(el);
-            setTimeout(() => { el.classList.add('hide'); setTimeout(() => el.remove(), 300); }, type === 'danger' ? 7000 : 4000);
-        }
-
-        function setBtnLoading(btn, loading) {
-            if (loading) {
-                btn.dataset.html = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> กำลังดำเนินการ...`;
-            } else {
-                btn.disabled = false;
-                if (btn.dataset.html) btn.innerHTML = btn.dataset.html;
-            }
-        }
-
-        function getModal(id) { return bootstrap.Modal.getOrCreateInstance(document.getElementById(id)); }
-
-        // ==========================================
-        // เกจ และการแปลงข้อมูล
-        // ==========================================
-        function createGauge(elementId, maxVal, isRO) {
-            let colorStops = isRO ? [[0.4, '#38bdf8'], [0.8, '#f59e0b'], [1, '#ef4444']] : [[0.5, '#10b981'], [0.8, '#f59e0b'], [1, '#ef4444']];
-            let chart = echarts.init(document.getElementById(elementId));
-            chart.setOption({
-                series: [{ type: 'gauge', startAngle: 210, endAngle: -30, min: 0, max: maxVal, splitNumber: 4, itemStyle: { color: '#ef4444' }, progress: { show: true, roundCap: true, width: 8 }, pointer: { length: '65%', width: 5, itemStyle: { color: '#ef4444' } }, axisLine: { lineStyle: { width: 8, color: colorStops } }, axisTick: { distance: -10, length: 4, lineStyle: { color: '#fff', width: 1 } }, splitLine: { distance: -15, length: 8, lineStyle: { color: '#fff', width: 2 } }, axisLabel: { color: '#94a3b8', distance: 15, fontSize: 9 }, detail: { valueAnimation: true, formatter: '{value}', color: '#fff', fontSize: 14, offsetCenter: [0, '60%'] }, data: [{ value: 0 }] }]
+        $(document).ready(function() {
+            $('.datepicker').datepicker({
+                dateFormat: 'mm/dd/yy',
+                changeMonth: true,
+                changeYear: true,
+                yearRange: "-100:+100",
+                isBuddhist: true,
+                showButtonPanel: true,
+                closeText: 'ปิด',
+                currentText: 'วันนี้',
+                monthNames: ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+                        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"],
+                monthNamesShort: ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+                        "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."],
+                dayNames: ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"],
+                dayNamesShort: ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."],
+                dayNamesMin: ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."]
             });
-            gauges[elementId] = chart;
-        }
-
-        function extractNum(val) {
-            if(val === null || val === undefined || val === '') return 0;
-            let n = parseFloat(val);
-            return isNaN(n) ? 0 : n;
-        }
-
-        function parseRobustDate(rawStr) {
-            let str = String(rawStr || "").trim();
-            if (!str) return null;
-            let parts = str.split(/[\s,]+/); 
-            let datePart = parts[0]; 
-            let timePart = parts[1] || "00:00"; 
-            let dParts = datePart.split('/');
-            if (dParts.length !== 3) dParts = datePart.split('-');
-            if (dParts.length === 3) {
-                let day = dParts[0]; let month = dParts[1]; let year = dParts[2];
-                if (year.length < 4 && dParts[0].length === 4) { year = dParts[0]; month = dParts[1]; day = dParts[2]; }
-                let yNum = parseInt(year, 10);
-                if (isNaN(yNum)) return null;
-                if (yNum > 2400) yNum -= 543; // ปี พ.ศ. → ค.ศ. เพื่อให้ปฏิทินทำงานถูกต้อง
-                let y = String(yNum); let m = String(parseInt(month, 10)).padStart(2, '0'); let d = String(parseInt(day, 10)).padStart(2, '0');
-                let tParts = timePart.split(':'); let h = String(tParts[0] || '0').padStart(2, '0'); let min = String(tParts[1] || '0').padStart(2, '0');
-                return { dateStr: `${y}-${m}-${d}`, monthStr: `${y}-${m}`, dayNum: parseInt(d, 10), timeDisplay: `${d}/${m}/${y} ${h}:${min}` };
-            }
-            return null;
-        }
-
-        function mapRow(row, idx) {
-            let mapped = { _raw: row, _row: Number(row._row) || (idx + 2) };
-            for (let k in row) {
-                if (k.startsWith('_')) continue;
-                let lk = k.toLowerCase().replace(/\s+/g, ' '); 
-                let val = row[k];
-                if(lk.includes('ประทับเวลา') || lk.includes('timestamp')) mapped.timestamp_raw = val;
-                else if(lk === 'orp') mapped.orp = extractNum(val);
-                else if(lk.includes('chlorine ในน้ำดิบ')) mapped.cl_raw = val;
-                else if(lk.includes('feed pump')) mapped.press_feed = extractNum(val);
-                else if(lk.includes('sand pressure')) mapped.press_sand = extractNum(val);
-                else if(lk.includes('sand clock')) mapped.clk_sand = val;
-                else if(lk.includes('softener pressure')) mapped.press_soft = extractNum(val);
-                else if(lk.includes('softener clock')) mapped.clk_soft = val;
-                else if(lk.includes('brine')) mapped.brine = extractNum(val);
-                else if(lk.includes('aquadur')) mapped.aqua = val;
-                else if(lk.includes('carbon 1 pressure')) mapped.press_c1 = extractNum(val);
-                else if(lk.includes('carbon 1 clock')) mapped.clk_c1 = val;
-                else if(lk.includes('carbon 1 chlorine')) mapped.cl_c1 = val;
-                else if(lk.includes('carbon 2 pressure')) mapped.press_c2 = extractNum(val);
-                else if(lk.includes('carbon 2 clock')) mapped.clk_c2 = val;
-                else if(lk.includes('carbon 2 chlorine')) mapped.cl_c2 = val;
-                else if(lk.includes('cartridge filter')) mapped.press_cart = extractNum(val);
-                else if(lk.includes('raw cond')) mapped.cond_raw = extractNum(val);
-                else if(lk.includes('temp')) mapped.temp = extractNum(val);
-                else if(lk.includes('ro pressure')) mapped.press_ro_pump = extractNum(val);
-                else if(lk.includes('concentrate pressure')) mapped.press_conc = extractNum(val);
-                else if(lk.includes('permeate pressure')) mapped.press_perm = extractNum(val);
-                else if(lk.includes('permeate flow')) mapped.flow_perm = extractNum(val);
-                else if(lk.includes('concentrate flow')) mapped.flow_conc = extractNum(val);
-                else if(lk.includes('cond') && lk.includes('ro')) mapped.cond_ro = extractNum(val);
-                else if(lk.includes('rejection')) mapped.rej = extractNum(val);
-                else if(lk.includes('recovery')) mapped.rec = extractNum(val);
-                else if(lk.includes('ชื่อ-สกุล')) mapped.operator = val;
-            }
-            let dateInfo = parseRobustDate(mapped.timestamp_raw);
-            if(dateInfo) {
-                mapped.dateStr = dateInfo.dateStr; mapped.monthStr = dateInfo.monthStr;
-                mapped.dayNum = dateInfo.dayNum; mapped.timeDisplay = dateInfo.timeDisplay;
-            } else { mapped.dateStr = ""; }
-            return mapped;
-        }
-
-        // ==========================================
-        // โหลดข้อมูล (keepDate = วันที่ที่ต้องการให้คงไว้หลังโหลดใหม่)
-        // ==========================================
-        async function loadData(keepDate, keepMonth) {
-            document.getElementById('loadingOverlay').style.display = 'flex';
-            try {
-                const data = await fetchJson(SCRIPT_URL);
-                if (!Array.isArray(data)) throw new Error((data && data.error) ? data.error : 'รูปแบบข้อมูลไม่ถูกต้อง');
-
-                globalData = data.map((row, idx) => mapRow(row, idx)).filter(d => d.dateStr !== "");
-                globalData.forEach((d, i) => { d._uid = i; });
-
-                if (globalData.length > 0) {
-                    availableDates = [...new Set(globalData.map(d => d.dateStr))].sort((a, b) => a.localeCompare(b));
-                    populateROMonthFilter();
-                    let target = availableDates[availableDates.length - 1];
-                    if (keepDate) {
-                        if (availableDates.includes(keepDate)) target = keepDate;
-                        else target = availableDates.filter(d => d <= keepDate).pop() || target;
-                    }
-                    initCalendar(target);
-                    setMonth(keepMonth || todayMonthKey()); // ค่าเริ่มต้น = เดือนปัจจุบัน
-                } else {
-                    availableDates = [];
-                    availableMonths = [];
-                    document.getElementById('historyTableBody').innerHTML = `<tr><td colspan="7" class="py-4 text-secondary">ยังไม่มีข้อมูล</td></tr>`;
-                }
-            } catch (e) {
-                console.error(e);
-                showToast('พบปัญหาในการดึงข้อมูล RO: ' + e.message, 'danger');
-            } finally { 
-                document.getElementById('loadingOverlay').style.display = 'none'; 
-            }
-        }
-
-        function initCalendar(target) {
-            if (fp) fp.destroy();
-            fp = flatpickr("#dateFilter", {
-                locale: "th", dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", enable: availableDates,
-                defaultDate: target,
-                onChange: function(selectedDates, dateStr) { if(dateStr) applyFilter(dateStr); },
-                onDayCreate: function(dObj, dStr, fpi, dayElem) {
-                    let dateStrFormat = flatpickr.formatDate(dayElem.dateObj, "Y-m-d");
-                    let today = new Date(); today.setHours(0,0,0,0);
-                    if (availableDates.includes(dateStrFormat)) { dayElem.classList.add('has-data'); } 
-                    else if (dayElem.dateObj < today) { dayElem.classList.add('no-data-past'); }
-                }
-            });
-            applyFilter(target);
-        }
-
-        function analyzeWaterSystem(data) {
-            let alerts = []; let normals = [];
-            let condRO = parseFloat(data.cond_ro) || 0;
-            if (condRO >= 10) alerts.push(`<b>Cond RO สูงเกินเกณฑ์ (${condRO}):</b> ตรวจสอบการอุดตันของ RO Membrane`);
-            else normals.push(`Conductivity RO ผ่านเกณฑ์ TRT`);
-
-            let rec = parseFloat(data.rec) || 0;
-            if (rec > 0 && rec < 45) alerts.push(`<b>% Recovery ต่ำ (${fmtNum(rec)}%):</b> อาจเกิดจาก Membrane ตัน`);
-            else if (rec > 55) alerts.push(`<b>% Recovery สูง (${fmtNum(rec)}%):</b> ระบบทำงานหนัก ระวังอายุเมมเบรนสั้นลง`);
-            else if (rec >= 45 && rec <= 55) normals.push(`% Recovery อยู่ในเกณฑ์มาตรฐาน (${fmtNum(rec)}%)`);
-
-            let html = "";
-            if (alerts.length > 0) {
-                html += `<h6 class="text-danger mb-2"><i class="fas fa-exclamation-triangle"></i> ข้อควรระวัง:</h6><ul class="text-warning mb-3" style="font-size: 0.95rem;">`;
-                alerts.forEach(a => html += `<li>${a}</li>`); html += `</ul>`;
-            } else {
-                html += `<div class="alert alert-success bg-transparent border-success text-success p-2 mb-3"><i class="fas fa-check-circle"></i> ผลการตรวจเบื้องต้น: ระบบสมบูรณ์ปกติ</div>`;
-            }
-            document.getElementById('analysisResult').innerHTML = html;
-        }
-
-        // forceRecord = ระบุรายการที่ต้องการแสดง (ถ้าไม่ระบุจะใช้รายการล่าสุดของวันนั้น)
-        function applyFilter(selectedDate, forceRecord) {
-            if(!selectedDate) return;
-            currentSelectedDate = selectedDate;
-            let targetDataList = globalData.filter(d => d.dateStr === selectedDate);
-            if(targetDataList.length > 0) {
-                currentDayData = forceRecord || targetDataList[targetDataList.length - 1];
-                updateDashboard(currentDayData); 
-                analyzeWaterSystem(currentDayData);
-            }
-            setMonth(selectedDate.substring(0, 7)); // ส่วนข้อมูลรายเดือนเปลี่ยนตามวันที่เลือก
-        }
-
-        function updateDashboard(data) {
-            document.getElementById('valOperator').innerText = data.operator || "-";
-            document.getElementById('valOrp').innerText = data.orp || 0;
-            document.getElementById('valCl').innerText = data.cl_raw || "-";
-            document.getElementById('valCondRaw').innerText = data.cond_raw || 0;
-            document.getElementById('valCondRo').innerText = data.cond_ro || 0;
-            document.getElementById('valTemp').innerText = data.temp || 0;
-            document.getElementById('valPermFlow').innerText = data.flow_perm || 0;
-            document.getElementById('valConcFlow').innerText = data.flow_conc || 0;
-            document.getElementById('valRej').innerText = data.rej ? fmtNum(data.rej) : "0.00"; 
-            document.getElementById('valRec').innerText = data.rec ? fmtNum(data.rec) : "0.00"; 
-
-            let perm = data.flow_perm || 0; let conc = data.flow_conc || 0; let temp = data.temp || 0;
-            document.getElementById('bobPermeate').style.bottom = Math.min(perm / 40 * 100, 100) + "%";
-            document.getElementById('bobReject').style.bottom = Math.min(conc / 40 * 100, 100) + "%";
-            document.getElementById('thermoFluid').style.height = Math.min(temp / 40 * 100, 100) + "%";
-
-            const setBadge = (id, val) => {
-                let el = document.getElementById(id);
-                if(val === "Yes" || val === "yes" || val === "YES") { el.className = "badge bg-success"; el.innerText = "Yes"; }
-                else if(val === "-" || val === "" || val === undefined || val === null) { el.className = "text-secondary"; el.innerText = "-"; }
-                else { el.className = "badge bg-warning text-dark"; el.innerText = val; }
-            };
-            setBadge('valSandClk', data.clk_sand); setBadge('valC1Clk', data.clk_c1); setBadge('valC1Cl', data.cl_c1);
-            setBadge('valC2Clk', data.clk_c2); setBadge('valC2Cl', data.cl_c2); setBadge('valSoftClk', data.clk_soft);
-            setBadge('valAqua', data.aqua); document.getElementById('valBrine').innerText = data.brine || "-";
-
-            gauges['gFeed'].setOption({ series: [{ data: [{ value: data.press_feed || 0 }] }] });
-            gauges['gSand'].setOption({ series: [{ data: [{ value: data.press_sand || 0 }] }] });
-            gauges['gC1'].setOption({ series: [{ data: [{ value: data.press_c1 || 0 }] }] });
-            gauges['gC2'].setOption({ series: [{ data: [{ value: data.press_c2 || 0 }] }] });
-            gauges['gSoft'].setOption({ series: [{ data: [{ value: data.press_soft || 0 }] }] });
-            gauges['gCart'].setOption({ series: [{ data: [{ value: data.press_cart || 0 }] }] });
-            gauges['gRoPump'].setOption({ series: [{ data: [{ value: data.press_ro_pump || 0 }] }] });
-            gauges['gConcPress'].setOption({ series: [{ data: [{ value: data.press_conc || 0 }] }] });
-            gauges['gPermPress'].setOption({ series: [{ data: [{ value: data.press_perm || 0 }] }] });
-        }
-
-        // ==========================================
-        // ส่วนข้อมูลรายเดือน: ตัวเลือกเดือนเดียว คุมทั้งกราฟและตาราง
-        // ==========================================
-        function todayMonthKey() {
-            const d = new Date();
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        }
-        function monthLabel(key) {
-            const [y, m] = key.split('-').map(Number);
-            return `${csMonthNamesFull[m - 1] || m} ${y + 543}`;
-        }
-
-        function populateROMonthFilter() {
-            availableMonths = [...new Set(globalData.map(d => d.monthStr))].sort((a, b) => b.localeCompare(a));
-            const cur = todayMonthKey();
-            document.getElementById('monthFilter').innerHTML = availableMonths
-                .map(k => `<option value="${k}">${monthLabel(k)}${k === cur ? ' (เดือนนี้)' : ''}</option>`).join('');
-        }
-
-        function setMonth(key) {
-            if (!availableMonths.length) return;
-            if (!availableMonths.includes(key)) {
-                // เดือนที่ขอยังไม่มีข้อมูล → ใช้เดือนปัจจุบัน ถ้าไม่มีอีกใช้เดือนล่าสุดที่มีข้อมูล
-                key = availableMonths.includes(todayMonthKey()) ? todayMonthKey() : availableMonths[0];
-            }
-            currentMonthKey = key;
-            document.getElementById('monthFilter').value = key;
-            const idx = availableMonths.indexOf(key);
-            document.getElementById('monthPrev').disabled = idx >= availableMonths.length - 1;
-            document.getElementById('monthNext').disabled = idx <= 0;
-
-            const monthData = globalData.filter(d => d.monthStr === key);
-            renderTrendCharts(monthData, key);
-            updateHistoryTable(monthData, key);
-        }
-
-        function stepMonth(dir) { // dir = -1 เดือนก่อนหน้า, +1 เดือนถัดไป
-            const idx = availableMonths.indexOf(currentMonthKey);
-            const next = availableMonths[idx - dir];
-            if (next) setMonth(next);
-        }
-
-        function buildTrendOption(monthData, key, field, opt) {
-            const white = '#ffffff';
-            const [y, m] = key.split('-').map(Number);
-            const dailyMap = {};
-            monthData.forEach(d => { dailyMap[d.dateStr] = d; }); // ใช้รายการล่าสุดของแต่ละวัน
-            const dates = Object.keys(dailyMap).sort((a, b) => a.localeCompare(b));
-            const labels = dates.map(d => dailyMap[d].dayNum);
-            const values = dates.map(d => {
-                const v = parseFloat(dailyMap[d][field]);
-                if (!v) return { value: null };
-                return { value: v, itemStyle: { color: v >= opt.limit ? '#ef4444' : opt.color } };
-            });
-            const hasData = values.some(p => p.value !== null);
-
-            return {
-                animationDuration: 600,
-                textStyle: { color: white, fontFamily: "'Segoe UI', sans-serif" },
-                tooltip: {
-                    trigger: 'axis', backgroundColor: '#0f172a', borderColor: opt.color, textStyle: { color: white },
-                    formatter: p => {
-                        const it = p[0];
-                        const val = (it.value === null || it.value === undefined) ? 'ไม่มีข้อมูล' : `${it.value} µS/cm`;
-                        return `วันที่ ${it.name} ${TH_MONTH_SHORT[m - 1]} ${y + 543}<br><span style="color:${opt.color}">●</span> ${opt.name} : <b>${val}</b>`;
-                    }
-                },
-                grid: { left: 8, right: 16, bottom: 8, top: 34, containLabel: true },
-                xAxis: {
-                    type: 'category', boundaryGap: false, data: labels,
-                    axisLabel: { color: white }, axisLine: { lineStyle: { color: '#94a3b8' } }, axisTick: { lineStyle: { color: '#94a3b8' } }
-                },
-                yAxis: {
-                    type: 'value', name: 'µS/cm', nameTextStyle: { color: white, align: 'left' },
-                    axisLabel: { color: white }, splitLine: { lineStyle: { color: '#334155' } },
-                    max: v => Math.ceil((Number.isFinite(v.max) ? Math.max(v.max, opt.limit) : opt.limit) * 1.15)
-                },
-                graphic: hasData ? [] : [{ type: 'text', left: 'center', top: 'middle', style: { text: 'ไม่มีข้อมูลในเดือนนี้', fill: white, fontSize: 14 } }],
-                series: [{
-                    name: opt.name, type: 'line', smooth: true, symbol: 'circle', symbolSize: 7, connectNulls: false,
-                    lineStyle: { color: opt.color, width: 2.5 }, itemStyle: { color: opt.color },
-                    areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: opt.area }, { offset: 1, color: 'rgba(15,23,42,0)' }]) },
-                    markLine: {
-                        silent: true, symbol: 'none',
-                        lineStyle: { color: '#ef4444', type: 'dashed', width: 1.5 },
-                        label: { color: white, formatter: `เกณฑ์ ${opt.limit}`, position: 'insideEndTop' },
-                        data: [{ yAxis: opt.limit }]
-                    },
-                    data: values
-                }]
-            };
-        }
-
-        function renderTrendCharts(monthData, key) {
-            if (!rawChart) rawChart = echarts.init(document.getElementById('rawChart'));
-            if (!monthlyChart) monthlyChart = echarts.init(document.getElementById('monthlyChart'));
-            rawChart.setOption(buildTrendOption(monthData, key, 'cond_raw',
-                { name: 'RAW Conductivity', color: '#22c55e', area: 'rgba(34,197,94,0.45)', limit: 500 }), true);
-            monthlyChart.setOption(buildTrendOption(monthData, key, 'cond_ro',
-                { name: 'Conductivity RO', color: '#38bdf8', area: 'rgba(56,189,248,0.45)', limit: 10 }), true);
-        }
-
-        // ==========================================
-        // ตารางประวัติ RO (แสดงเฉพาะวันที่ + คอลัมน์จัดการ)
-        // ==========================================
-        function updateHistoryTable(monthData, monthKey) {
-            const tbody = document.getElementById('historyTableBody');
-            const label = document.getElementById('historyMonthLabel');
-            label.textContent = `${monthData.length} รายการ`;
-            if (!monthData.length) {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-secondary">ไม่มีข้อมูลในเดือนนี้</td></tr>`;
-                return;
-            }
-
-            const sorted = [...monthData].sort((a, b) => b.dateStr.localeCompare(a.dateStr) || (b._row - a._row));
-            tbody.innerHTML = sorted.map(row => {
-                const cond = parseFloat(row.cond_ro) || 0;
-                const rej = parseFloat(row.rej) || 0;
-                const rec = parseFloat(row.rec) || 0;
-                const perm = parseFloat(row.flow_perm) || 0;
-                const conc = parseFloat(row.flow_conc) || 0;
-                const condDot = !cond ? '' : (cond < 10 ? 'ok' : 'bad');
-                const rejDot = !rej ? '' : (rej > 90 ? 'ok' : 'bad');
-                const recDot = !rec ? '' : (rec >= 45 && rec <= 55 ? 'ok' : 'warn');
-                const flowOk = v => v >= 18 && v <= 35;
-                const flowDot = (!perm && !conc) ? '' : (flowOk(perm) && flowOk(conc) ? 'ok' : 'warn');
-                const isSel = currentDayData && currentDayData._uid === row._uid;
-
-                return `
-                    <tr class="${isSel ? 'is-selected' : ''}">
-                        <td class="text-nowrap fw-semibold">${formatThaiDate(row.dateStr)}</td>
-                        <td class="fw-bold"><span class="st-dot ${condDot}"></span>${fmtNum(row.cond_ro || '')}</td>
-                        <td><span class="st-dot ${rejDot}"></span>${fmtNum(row.rej || '')}</td>
-                        <td><span class="st-dot ${recDot}"></span>${fmtNum(row.rec || '')}</td>
-                        <td class="text-nowrap"><span class="st-dot ${flowDot}"></span>${fmtNum(row.flow_perm || '')} / ${fmtNum(row.flow_conc || '')}</td>
-                        <td>${esc(row.operator || '-')}</td>
-                        <td>
-                            <div class="act-group">
-                                <button type="button" class="btn-act view" title="ดูข้อมูลทั้งหมด" onclick="viewRecord(${row._uid})"><i class="fas fa-eye"></i></button>
-                                <button type="button" class="btn-act edit" title="แก้ไข" onclick="openEdit(${row._uid})"><i class="fas fa-pen"></i></button>
-                                <button type="button" class="btn-act del" title="ลบ" onclick="openDelete(${row._uid})"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>`;
-            }).join('');
-        }
-
-        // ---------- ดูข้อมูลทั้งหมด ----------
-        function viewRecord(uid) {
-            const rec = globalData[uid];
-            if (!rec) return;
-            document.getElementById('viewModalTitle').innerHTML = `<i class="fas fa-eye me-2"></i>ข้อมูลตรวจเช็ควันที่ ${formatThaiDate(rec.dateStr)}`;
-
-            const cond = parseFloat(rec.cond_ro) || 0, rej = parseFloat(rec.rej) || 0, recov = parseFloat(rec.rec) || 0;
-            const chip = (lbl, val, unit, dot) => `<div class="view-chip"><div class="lbl">${lbl}</div><div class="val"><span class="st-dot ${dot}"></span>${val} <small class="fs-6 text-secondary">${unit}</small></div></div>`;
-            const summary = [
-                chip('Conductivity RO {< 10}', fmtNum(rec.cond_ro || ''), 'µS/cm', !cond ? '' : (cond < 10 ? 'ok' : 'bad')),
-                chip('% Salt Rejection {> 90}', fmtNum(rec.rej || ''), '%', !rej ? '' : (rej > 90 ? 'ok' : 'bad')),
-                chip('% Recovery {45-55}', fmtNum(rec.rec || ''), '%', !recov ? '' : (recov >= 45 && recov <= 55 ? 'ok' : 'warn')),
-                `<div class="view-chip"><div class="lbl">ผู้ตรวจ</div><div class="val fs-6 pt-1">${esc(rec.operator || '-')}</div></div>`
-            ].join('');
-
-            const fields = Object.keys(rec._raw).filter(k => !k.startsWith('_')).map(k =>
-                `<div class="view-item"><div class="view-label">${esc(k)}</div><div class="view-value">${esc(displayRaw(rec._raw[k]))}</div></div>`
-            ).join('');
-
-            document.getElementById('viewModalBody').innerHTML = `<div class="view-summary">${summary}</div><div class="view-grid">${fields}</div>`;
-            document.getElementById('viewToDashBtn').onclick = () => showOnDashboard(uid);
-            document.getElementById('viewEditBtn').onclick = () => {
-                const vm = document.getElementById('viewModal');
-                vm.addEventListener('hidden.bs.modal', () => openEdit(uid), { once: true });
-                getModal('viewModal').hide();
-            };
-            getModal('viewModal').show();
-        }
-
-        function showOnDashboard(uid) {
-            const rec = globalData[uid];
-            if (!rec) return;
-            getModal('viewModal').hide();
-            if (fp) fp.setDate(rec.dateStr, false);
-            applyFilter(rec.dateStr, rec);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // ---------- แก้ไขข้อมูล ----------
-        function openEdit(uid) {
-            const rec = globalData[uid];
-            if (!rec) return;
-            editingUid = uid;
-            document.getElementById('editModalTitle').innerHTML = `<i class="fas fa-pen me-2"></i>แก้ไขข้อมูลวันที่ ${formatThaiDate(rec.dateStr)}`;
-
-            const keys = Object.keys(rec._raw).filter(k => !k.startsWith('_'));
-            document.getElementById('editFields').innerHTML = keys.map(k => {
-                const raw = rec._raw[k];
-                const val = (raw === null || raw === undefined) ? '' : String(raw);
-                const attrs = `data-key="${esc(k)}" data-orig="${esc(val)}"`;
-                let input;
-                if (isTsKey(k)) {
-                    input = `<input type="text" class="form-control form-control-sm ro-input" value="${esc(val)}" readonly>`;
-                } else if (/^(yes|no)$/i.test(val.trim())) {
-                    const cur = val.trim().toLowerCase();
-                    input = `<select class="form-select form-select-sm ro-input edit-field" data-yn="1" ${attrs}>
-                                <option value="Yes" ${cur === 'yes' ? 'selected' : ''}>Yes</option>
-                                <option value="No" ${cur === 'no' ? 'selected' : ''}>No</option>
-                             </select>`;
-                } else {
-                    input = `<input type="text" class="form-control form-control-sm ro-input edit-field" ${attrs} value="${esc(val)}">`;
-                }
-                const lock = isTsKey(k) ? ' <span class="badge bg-secondary">แก้ไขไม่ได้</span>' : '';
-                return `<div class="col-12 col-md-6 col-xl-4"><label class="form-label small text-secondary mb-1">${esc(k)}${lock}</label>${input}</div>`;
-            }).join('');
-
-            document.getElementById('editBy').value = lastActor;
-            document.getElementById('editReason').value = '';
-            getModal('editModal').show();
-        }
-
-        async function saveEdit() {
-            const rec = globalData[editingUid];
-            if (!rec) return;
-            const changed = {};
-            document.querySelectorAll('#editFields .edit-field').forEach(el => {
-                const nv = el.value.trim();
-                const ov = (el.dataset.orig || '').trim();
-                const same = el.dataset.yn ? nv.toLowerCase() === ov.toLowerCase() : nv === ov;
-                if (!same) changed[el.dataset.key] = nv;
-            });
-            if (!Object.keys(changed).length) { showToast('ยังไม่มีการเปลี่ยนแปลงข้อมูล', 'info'); return; }
-
-            const by = document.getElementById('editBy').value.trim();
-            if (!by) { showToast('กรุณาระบุชื่อผู้แก้ไข', 'warning'); document.getElementById('editBy').focus(); return; }
-            lastActor = by;
-
-            const btn = document.getElementById('editSaveBtn');
-            setBtnLoading(btn, true);
-            try {
-                const r = await postAction({
-                    action: 'updateRow', row: rec._row, timestamp: rec.timestamp_raw,
-                    values: changed, by, reason: document.getElementById('editReason').value.trim()
-                });
-                getModal('editModal').hide();
-                showToast(`บันทึกการแก้ไขเรียบร้อย (${r.changed !== undefined ? r.changed : Object.keys(changed).length} ช่อง)`, 'success');
-                if (r.skipped && r.skipped.length) showToast('ช่องต่อไปนี้เป็นสูตรคำนวณในชีต จึงไม่ได้แก้ไข: ' + r.skipped.join(', '), 'warning');
-                await loadData(currentSelectedDate, currentMonthKey);
-            } catch (e) {
-                showToast(e.message, 'danger');
-            } finally {
-                setBtnLoading(btn, false);
-            }
-        }
-
-        // ---------- ลบข้อมูล ----------
-        function openDelete(uid) {
-            const rec = globalData[uid];
-            if (!rec) return;
-            deletingUid = uid;
-            document.getElementById('deleteSummary').innerHTML = `
-                <div class="view-chip">
-                    <div class="lbl">รายการที่จะลบ</div>
-                    <div class="text-white fw-bold fs-5">${formatThaiDate(rec.dateStr)}</div>
-                    <div class="small text-secondary mt-1">ประทับเวลา: ${esc(rec.timestamp_raw || '-')}</div>
-                    <div class="small text-secondary">Cond RO: <span class="text-white">${fmtNum(rec.cond_ro || '')}</span> · ผู้ตรวจ: <span class="text-white">${esc(rec.operator || '-')}</span></div>
-                </div>`;
-            document.getElementById('delBy').value = lastActor;
-            document.getElementById('delReason').value = '';
-            getModal('deleteModal').show();
-        }
-
-        async function confirmDelete() {
-            const rec = globalData[deletingUid];
-            if (!rec) return;
-            const by = document.getElementById('delBy').value.trim();
-            if (!by) { showToast('กรุณาระบุชื่อผู้ลบข้อมูล', 'warning'); document.getElementById('delBy').focus(); return; }
-            lastActor = by;
-
-            const btn = document.getElementById('deleteConfirmBtn');
-            setBtnLoading(btn, true);
-            try {
-                await postAction({
-                    action: 'deleteRow', row: rec._row, timestamp: rec.timestamp_raw,
-                    by, reason: document.getElementById('delReason').value.trim()
-                });
-                getModal('deleteModal').hide();
-                showToast('ลบข้อมูลเรียบร้อย', 'success');
-                await loadData(currentSelectedDate, currentMonthKey);
-            } catch (e) {
-                showToast(e.message, 'danger');
-            } finally {
-                setBtnLoading(btn, false);
-            }
-        }
-
-        // ส่งคำสั่งแก้ไข/ลบไปยัง Apps Script (รองรับรหัสผ่านถ้าตั้ง EDIT_PIN ไว้)
-        async function postAction(payload) {
-            for (let attempt = 0; attempt < 3; attempt++) {
-                const r = await fetchJson(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(Object.assign({}, payload, { pin: editPin }))
-                });
-                if (r && r.needPin) {
-                    const p = window.prompt(r.error || 'กรุณากรอกรหัสสำหรับแก้ไข/ลบข้อมูล');
-                    if (p === null) throw new Error('ยกเลิกการดำเนินการ');
-                    editPin = p.trim();
-                    continue;
-                }
-                if (!r || r.error) throw new Error((r && r.error) || 'ไม่ทราบสาเหตุ');
-                return r;
-            }
-            throw new Error('รหัสไม่ถูกต้อง');
-        }
-
-        // ==========================================
-        // ผลเพาะเชื้อ C/S
-        // ==========================================
-        let csFilterReady = false;
-        const CS_TH_FULL_RE = new RegExp('(' + csMonthNamesFull.join('|') + ')');
-        const CS_TH_SHORT_KEYS = ['มค','กพ','มีค','เมย','พค','มิย','กค','สค','กย','ตค','พย','ธค'];
-        const CS_TH_SHORT_RE = /(?<![฀-๿])(มี\.?ค|ม\.?ค|ก\.?พ|เม\.?ย|พ\.?ค|มิ\.?ย|ก\.?ค|ส\.?ค|ก\.?ย|ต\.?ค|พ\.?ย|ธ\.?ค)\.?(?![฀-๿])/;
-        const CS_EN_KEYS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-        const CS_EN_RE = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i;
-
-        async function loadCSFoldersViaFetch() {
-            document.getElementById('csLoader').style.display = 'block';
-            try {
-                const folders = await fetchJson(CS_SCRIPT_URL + "?action=getFolders");
-                if (folders && folders.error) throw new Error(folders.error);
-                allCSFolders = (Array.isArray(folders) ? folders : []).map((f, i) => Object.assign({}, f, { _i: i, ym: parseFolderYM(f.name) }));
-                populateMonthFilter(allCSFolders);
-                renderCSGroups();
-            } catch (err) {
-                document.getElementById('csFolderGroups').innerHTML = `<div class="text-danger text-center small" style="grid-column: 1 / -1;">เกิดข้อผิดพลาด: ${esc(err.message)}</div>`;
-            } finally {
-                document.getElementById('csLoader').style.display = 'none';
-            }
-        }
-
-        function csToBE(y) { return y > 2400 ? y : y + 543; }
-
-        // ตัดเลขลำดับด้านหน้า เช่น "1." "01)" "2 -"
-        function csCleanName(name) {
-            const s = String(name || '');
-            return s.replace(/^\s*\d{1,2}\s*[.)\-:]\s*/, '').trim() || s;
-        }
-
-        // อ่านเดือน/ปีจากชื่อโฟลเดอร์ แล้วสร้างป้ายแบบย่อ เช่น "มิ.ย. 69"
-        function parseFolderYM(name) {
-            const s = String(name || '');
-            let month = 0, yearBE = 0, m;
-            if ((m = s.match(CS_TH_FULL_RE))) month = csMonthNamesFull.indexOf(m[1]) + 1;
-            else if ((m = s.match(CS_TH_SHORT_RE))) month = CS_TH_SHORT_KEYS.indexOf(m[1].replace(/\./g, '')) + 1;
-            else if ((m = s.match(CS_EN_RE))) month = CS_EN_KEYS.indexOf(m[1].slice(0, 3).toLowerCase()) + 1;
-
-            if (month) {
-                const y4 = s.match(/(?<!\d)(25\d{2}|20\d{2})(?!\d)/);
-                const y2 = s.slice(m.index + m[0].length).match(/(?<!\d)(\d{2})(?!\d)/);
-                if (y4) yearBE = csToBE(Number(y4[1]));
-                else if (y2) { const yy = Number(y2[1]); yearBE = yy >= 50 ? 2500 + yy : 2543 + yy; }
-            } else if ((m = s.match(/(?<!\d)(25\d{2}|20\d{2})[-\/. _]?(0[1-9]|1[0-2])(?!\d)/))) {
-                yearBE = csToBE(Number(m[1])); month = Number(m[2]);
-            } else if ((m = s.match(/(?<!\d)(0[1-9]|1[0-2])[-\/. _]?(25\d{2}|20\d{2})(?!\d)/))) {
-                month = Number(m[1]); yearBE = csToBE(Number(m[2]));
-            }
-
-            if (month >= 1 && month <= 12 && yearBE) {
-                return {
-                    month, yearBE,
-                    key: `${yearBE}-${String(month).padStart(2, '0')}`,
-                    label: `${TH_MONTH_SHORT[month - 1]} ${String(yearBE).slice(-2)}`,
-                    fullLabel: `${csMonthNamesFull[month - 1]} ${yearBE}`
-                };
-            }
-            const clean = csCleanName(s);
-            return { month: 0, yearBE: 0, key: 'อื่นๆ', label: clean, fullLabel: clean };
-        }
-
-        function populateMonthFilter(items) {
-            const selectEl = document.getElementById('csMonthFilter');
-            const dated = items.filter(i => i.ym.yearBE);
-            const years = [...new Set(dated.map(i => i.ym.yearBE))].sort((a, b) => b - a);
-            const months = [...new Set(dated.map(i => i.ym.key))].sort((a, b) => b.localeCompare(a));
-            const curBE = new Date().getFullYear() + 543;
-
-            let html = years.map(y => `<option value="year:${y}">ปี ${y}${y === curBE ? ' (ปีนี้)' : ''}</option>`).join('');
-            html += `<option value="all">ทุกปี</option>`;
-            if (months.length) {
-                html += `<optgroup label="เลือกรายเดือน">` + months.map(k => {
-                    const [y, mo] = k.split('-').map(Number);
-                    return `<option value="${k}">${TH_MONTH_SHORT[mo - 1]} ${String(y).slice(-2)}</option>`;
-                }).join('') + `</optgroup>`;
-            }
-            if (items.some(i => !i.ym.yearBE)) html += `<option value="other">อื่นๆ (ไม่ระบุเดือน)</option>`;
-            const prev = selectEl.value;
-            selectEl.innerHTML = html;
-
-            // ค่าเริ่มต้น: ปีปัจจุบัน (ถ้าปีนี้ยังไม่มีโฟลเดอร์ ใช้ปีล่าสุดที่มี) หลังจากนั้นคงค่าที่ผู้ใช้เลือกไว้
-            if (!csFilterReady) {
-                selectEl.value = years.includes(curBE) ? `year:${curBE}` : (years.length ? `year:${years[0]}` : 'all');
-                if (years.length) csFilterReady = true;
-            } else if ([...selectEl.options].some(o => o.value === prev)) {
-                selectEl.value = prev;
-            } else {
-                selectEl.value = years.includes(curBE) ? `year:${curBE}` : 'all';
-            }
-        }
-
-        function renderCSGroups() {
-            const container = document.getElementById('csFolderGroups');
-            const countEl = document.getElementById('csCount');
-            const keyword = document.getElementById('csSearchInput').value.trim().toLowerCase();
-            const sel = document.getElementById('csMonthFilter').value;
-
-            const filtered = allCSFolders.filter(f => {
-                let okSel = true;
-                if (sel.startsWith('year:')) okSel = f.ym.yearBE === Number(sel.slice(5));
-                else if (sel === 'other') okSel = !f.ym.yearBE;
-                else if (sel !== 'all') okSel = f.ym.key === sel;
-                const hay = `${f.name} ${f.ym.label} ${f.ym.fullLabel}`.toLowerCase();
-                return okSel && (!keyword || hay.includes(keyword));
-            });
-
-            countEl.textContent = `${filtered.length} โฟลเดอร์`;
-            countEl.classList.remove('d-none');
-
-            if (!filtered.length) {
-                container.innerHTML = allCSFolders.length
-                    ? `<div class="text-center text-muted py-3 small" style="grid-column: 1 / -1;">ไม่พบโฟลเดอร์ในช่วงที่เลือก</div>`
-                    : `<div class="text-center py-4 small text-white" style="grid-column: 1 / -1;"><i class="fa-solid fa-folder-open fa-2x mb-2 d-block text-secondary"></i>ยังไม่มีไฟล์ผลเพาะเชื้อ กดปุ่ม "เพิ่มไฟล์" เพื่ออัปโหลดไฟล์แรก</div>`;
-                return;
-            }
-
-            // เรียง: ปีใหม่ก่อน ภายในปีเรียง ม.ค. → ธ.ค. และโฟลเดอร์ที่ไม่ระบุเดือนไว้ท้ายสุด
-            filtered.sort((a, b) => (b.ym.yearBE - a.ym.yearBE) || (a.ym.month - b.ym.month) || String(a.name).localeCompare(String(b.name), 'th'));
-
-            const latestKey = allCSFolders.reduce((mx, f) => (f.ym.yearBE && f.ym.key > mx) ? f.ym.key : mx, '');
-            const showHeads = !sel.startsWith('year:') && new Set(filtered.map(f => f.ym.yearBE)).size > 1;
-            const seen = {};
-            let lastYear = null;
-            let html = '';
-
-            filtered.forEach(f => {
-                if (showHeads && f.ym.yearBE !== lastYear) {
-                    lastYear = f.ym.yearBE;
-                    html += `<div class="cs-year-head">${f.ym.yearBE ? 'ปี ' + f.ym.yearBE : 'อื่นๆ'}</div>`;
-                }
-                seen[f.ym.label] = (seen[f.ym.label] || 0) + 1;
-                const label = seen[f.ym.label] > 1 ? `${f.ym.label} (${seen[f.ym.label]})` : f.ym.label;
-                const isLatest = f.ym.yearBE && f.ym.key === latestKey;
-                html += `
-                    <button type="button" class="cs-tile ${isLatest ? 'is-latest' : ''}" data-i="${f._i}" title="${esc(f.name)}">
-                        ${isLatest ? '<span class="cs-new">ล่าสุด</span>' : ''}
-                        <i class="fa-solid fa-folder"></i>
-                        <span class="cs-label">${esc(label)}</span>
-                    </button>`;
-            });
-            container.innerHTML = html;
-
-            container.querySelectorAll('.cs-tile').forEach(el => {
-                el.addEventListener('click', () => openCSModal(allCSFolders[Number(el.dataset.i)]));
-            });
-        }
-
-        // ---------- ตัวช่วยผลเพาะเชื้อ ----------
-        function fmtSize(bytes) {
-            const n = Number(bytes) || 0;
-            if (n >= 1024 * 1024) return (n / 1024 / 1024).toFixed(1) + ' MB';
-            return Math.max(1, Math.round(n / 1024)) + ' KB';
-        }
-        function fmtThaiDay(iso) {
-            const d = new Date(iso);
-            if (isNaN(d)) return '-';
-            return `${d.getDate()} ${TH_MONTH_SHORT[d.getMonth()]} ${d.getFullYear() + 543}`;
-        }
-        function csFileIcon(mime, name) {
-            if (/pdf/i.test(mime || '') || /\.pdf$/i.test(name || '')) return 'fa-file-pdf text-danger';
-            if (/^image\//i.test(mime || '')) return 'fa-file-image text-info';
-            return 'fa-file-lines text-secondary';
-        }
-        function csSplitName(name) {
-            const m = String(name || '').match(/^(.+?)(\.[A-Za-z0-9]{1,6})?$/);
-            return { base: (m && m[1]) || String(name || ''), ext: (m && m[2]) || '' };
-        }
-        function csTodayKey() {
-            const d = new Date();
-            return `${d.getFullYear() + 543}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        }
-        function csKeyLabel(key) {
-            const [y, m] = key.split('-').map(Number);
-            return `${csMonthNamesFull[m - 1]} ${y}`;
-        }
-        function csFindFolderByKey(key) {
-            return allCSFolders.find(f => !f.isRoot && f.ym.key === key) || null;
-        }
-        function csFillMonthYear(monthId, yearId, key) {
-            const [y, m] = key.split('-');
-            const cur = new Date().getFullYear() + 543;
-            const years = [...new Set([cur + 1, cur, cur - 1, cur - 2, cur - 3, Number(y),
-                ...allCSFolders.filter(f => f.ym.yearBE).map(f => f.ym.yearBE)])].sort((a, b) => b - a);
-            document.getElementById(monthId).innerHTML = csMonthNamesFull
-                .map((name, i) => `<option value="${String(i + 1).padStart(2, '0')}">${name}</option>`).join('');
-            document.getElementById(yearId).innerHTML = years.map(v => `<option value="${v}">${v}</option>`).join('');
-            document.getElementById(monthId).value = m;
-            document.getElementById(yearId).value = y;
-        }
-        function csReadKey(monthId, yearId) {
-            return `${document.getElementById(yearId).value}-${document.getElementById(monthId).value}`;
-        }
-        // Bootstrap เปิดหน้าต่างซ้อนกันไม่ได้ จึงปิดหน้าต่างเดิมให้เสร็จก่อนเปิดหน้าต่างใหม่
-        function swapModal(fromId, openFn) {
-            const el = document.getElementById(fromId);
-            if (el.classList.contains('show')) {
-                el.addEventListener('hidden.bs.modal', () => openFn(), { once: true });
-                getModal(fromId).hide();
-            } else {
-                openFn();
-            }
-        }
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const r = new FileReader();
-                r.onload = () => resolve(String(r.result).split(',')[1] || '');
-                r.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
-                r.readAsDataURL(file);
-            });
-        }
-        async function csFilePayload(file) {
-            if (file.size > CS_MAX_FILE_MB * 1024 * 1024) throw new Error(`ไฟล์ใหญ่เกิน ${CS_MAX_FILE_MB} MB`);
-            return { name: file.name, mimeType: file.type || 'application/octet-stream', data: await fileToBase64(file) };
-        }
-        // โหลดโฟลเดอร์ใหม่ แล้วเปิดรายการไฟล์ของโฟลเดอร์ที่ระบุ (ถ้ายังมีอยู่)
-        async function csReloadAndOpen(folderId) {
-            await loadCSFoldersViaFetch();
-            const f = folderId ? allCSFolders.find(x => x.id === folderId) : null;
-            if (f) openCSModal(f);
-        }
-
-        // ---------- รายการไฟล์ในโฟลเดอร์ ----------
-        function openCSModal(folder) {
-            if (!folder) return;
-            csCurrentFolder = folder;
-            csCurrentFiles = [];
-            document.getElementById('csOpenDrive').href = folder.url || `https://drive.google.com/drive/folders/${encodeURIComponent(folder.id)}`;
-            document.getElementById('csModalTitle').innerHTML = `<i class="fa-solid fa-folder-open me-2"></i>ผลเพาะเชื้อ ${esc(folder.ym.fullLabel)}`;
-            document.getElementById('csAddHereBtn').classList.toggle('d-none', !folder.ym.yearBE);
-            getModal('csFileModal').show();
-            csLoadFileList();
-        }
-
-        async function csLoadFileList() {
-            const folder = csCurrentFolder;
-            const listEl = document.getElementById('csFileList');
-            document.getElementById('csModalLoading').style.display = 'block';
-            document.getElementById('csNoFiles').classList.add('d-none');
-            listEl.innerHTML = '';
-            try {
-                const files = await fetchJson(`${CS_SCRIPT_URL}?action=getFiles&folderId=${encodeURIComponent(folder.id)}`);
-                if (files && files.error) throw new Error(files.error);
-                if (folder !== csCurrentFolder) return; // ผู้ใช้เปลี่ยนโฟลเดอร์ระหว่างโหลด
-                csCurrentFiles = Array.isArray(files) ? files : [];
-                if (!csCurrentFiles.length) {
-                    document.getElementById('csNoFiles').classList.remove('d-none');
-                    return;
-                }
-                listEl.innerHTML = csCurrentFiles.map((file, i) => {
-                    const url = file.url || `https://drive.google.com/file/d/${encodeURIComponent(file.id)}/view`;
-                    const meta = [file.size ? fmtSize(file.size) : '', file.updated ? 'อัปเดต ' + fmtThaiDay(file.updated) : ''].filter(Boolean).join(' · ');
-                    return `
-                        <div class="cs-file">
-                            <a href="${esc(url)}" target="_blank" rel="noopener" class="cs-file-link" title="เปิดดูไฟล์">
-                                <i class="fa-solid ${csFileIcon(file.mimeType, file.name)} fa-lg"></i>
-                                <span class="d-flex flex-column" style="min-width: 0;">
-                                    <span class="text-truncate" style="font-size: 0.9rem;">${esc(file.name)}</span>
-                                    <span class="cs-file-meta">${esc(meta)}</span>
-                                </span>
-                            </a>
-                            <div class="act-group">
-                                <a class="btn-act view" href="${esc(url)}" target="_blank" rel="noopener" title="เปิดดู"><i class="fas fa-eye"></i></a>
-                                <button type="button" class="btn-act edit" data-act="edit" data-i="${i}" title="แก้ไข"><i class="fas fa-pen"></i></button>
-                                <button type="button" class="btn-act del" data-act="del" data-i="${i}" title="ลบ"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>`;
-                }).join('');
-            } catch (err) {
-                listEl.innerHTML = `
-                    <div class="text-danger text-center small py-2">ดึงรายการไฟล์ไม่สำเร็จ: ${esc(err.message)}</div>
-                    <div class="text-center small text-secondary">กดปุ่ม "เปิดโฟลเดอร์ใน Google Drive" ด้านล่างเพื่อดูไฟล์แทน</div>`;
-            } finally {
-                document.getElementById('csModalLoading').style.display = 'none';
-            }
-        }
-
-        // ---------- เพิ่มไฟล์ ----------
-        function csOpenUpload(presetKey) {
-            csReturnToList = document.getElementById('csFileModal').classList.contains('show');
-            swapModal('csFileModal', () => {
-                csUploadItems = [];
-                csFillMonthYear('csUpMonth', 'csUpYear', presetKey || csTodayKey());
-                document.getElementById('csUpBy').value = lastActor;
-                document.getElementById('csUpNote').value = '';
-                document.getElementById('csUpFiles').value = '';
-                csUpdateUploadHint();
-                csRenderUploadList();
-                getModal('csUploadModal').show();
-            });
-        }
-
-        function csUpdateUploadHint() {
-            const key = csReadKey('csUpMonth', 'csUpYear');
-            const f = csFindFolderByKey(key);
-            document.getElementById('csUpHint').innerHTML = f
-                ? `<i class="fa-solid fa-folder text-success me-1"></i>บันทึกในโฟลเดอร์ "${esc(f.name)}"`
-                : `<i class="fa-solid fa-folder-plus text-warning me-1"></i>ระบบจะสร้างโฟลเดอร์ "${esc(csKeyLabel(key))}" ให้อัตโนมัติ`;
-        }
-
-        function csAddUploadFiles(fileList) {
-            [...fileList].forEach(file => {
-                const tooBig = file.size > CS_MAX_FILE_MB * 1024 * 1024;
-                csUploadItems.push({ file, tooBig, status: tooBig ? 'error' : 'wait', msg: tooBig ? `ใหญ่เกิน ${CS_MAX_FILE_MB} MB` : '' });
-            });
-            csRenderUploadList();
-        }
-
-        function csRenderUploadList() {
-            const el = document.getElementById('csUpList');
-            const label = {
-                wait: '<span class="cs-st text-white-50">รออัปโหลด</span>',
-                uploading: '<span class="cs-st text-info"><span class="spinner-border spinner-border-sm me-1"></span>กำลังอัปโหลด</span>',
-                done: '<span class="cs-st text-success"><i class="fa-solid fa-check me-1"></i>สำเร็จ</span>'
-            };
-            el.innerHTML = csUploadItems.map((it, i) => `
-                <div class="cs-up-item">
-                    <i class="fa-solid ${csFileIcon(it.file.type, it.file.name)}"></i>
-                    <span class="nm" title="${esc(it.file.name)}">${esc(it.file.name)}</span>
-                    <span class="cs-file-meta">${fmtSize(it.file.size)}</span>
-                    ${it.status === 'error' ? `<span class="cs-st text-danger text-wrap"><i class="fa-solid fa-circle-exclamation me-1"></i>${esc(it.msg)}</span>` : label[it.status]}
-                    ${(it.status !== 'done' && it.status !== 'uploading' && !csUploading) ? `<button type="button" class="btn-close btn-close-white" style="font-size: 0.6rem;" data-rm="${i}" title="นำออก"></button>` : ''}
-                </div>`).join('');
-        }
-
-        let csUploadFolderId = '';
-
-        function csFinishUpload() {
-            const done = csUploadItems.filter(it => it.status === 'done').length;
-            const skipped = csUploadItems.filter(it => it.tooBig).map(it => it.file.name);
-            showToast(`อัปโหลดสำเร็จ ${done} ไฟล์` + (skipped.length ? ` (ข้ามไฟล์ที่ใหญ่เกิน ${CS_MAX_FILE_MB} MB: ${skipped.join(', ')})` : ''), skipped.length ? 'warning' : 'success');
-            csReturnToList = false;
-            swapModal('csUploadModal', () => csReloadAndOpen(csUploadFolderId));
-        }
-
-        async function csDoUpload() {
-            const pending = csUploadItems.filter(it => it.status !== 'done' && !it.tooBig);
-            if (!pending.length) {
-                if (csUploadItems.some(it => it.status === 'done')) csFinishUpload();
-                else showToast(csUploadItems.length ? `ไฟล์ที่เลือกใหญ่เกิน ${CS_MAX_FILE_MB} MB กรุณาเลือกไฟล์อื่น` : 'กรุณาเลือกไฟล์ที่ต้องการอัปโหลด', 'warning');
-                return;
-            }
-            const by = document.getElementById('csUpBy').value.trim();
-            if (!by) { showToast('กรุณาระบุชื่อผู้อัปโหลด', 'warning'); document.getElementById('csUpBy').focus(); return; }
-            lastActor = by;
-
-            const key = csReadKey('csUpMonth', 'csUpYear');
-            const note = document.getElementById('csUpNote').value.trim();
-            const btn = document.getElementById('csUpBtn');
-            let folderId = (csFindFolderByKey(key) || {}).id || '';
-            let okCount = 0;
-            if (!csUploadItems.some(it => it.status === 'done')) csUploadFolderId = '';
-
-            csUploading = true;
-            setBtnLoading(btn, true);
-            try {
-                for (const it of pending) {
-                    it.status = 'uploading'; it.msg = '';
-                    csRenderUploadList();
-                    try {
-                        const r = await postAction({ action: 'csUpload', folderId, monthKey: key, file: await csFilePayload(it.file), by, reason: note });
-                        folderId = r.folder.id; // ไฟล์ถัดไปใช้โฟลเดอร์เดียวกัน
-                        csUploadFolderId = folderId;
-                        it.status = 'done';
-                        okCount++;
-                    } catch (e) {
-                        it.status = 'error'; it.msg = e.message;
-                        if (e.message === 'ยกเลิกการดำเนินการ') break;
-                    }
-                    csRenderUploadList();
-                }
-            } finally {
-                csUploading = false;
-                setBtnLoading(btn, false);
-                csRenderUploadList();
-            }
-            if (!okCount) return;
-
-            const failed = csUploadItems.filter(it => it.status !== 'done' && !it.tooBig).length;
-            if (!failed) {
-                csFinishUpload();
-            } else {
-                showToast(`อัปโหลดสำเร็จ ${okCount} ไฟล์ ไม่สำเร็จ ${failed} ไฟล์ กด "อัปโหลด" อีกครั้งเพื่อลองใหม่`, 'warning');
-                loadCSFoldersViaFetch();
-            }
-        }
-
-        // ---------- แก้ไขไฟล์ ----------
-        function csOpenEdit(file) {
-            if (!file) return;
-            csEditingFile = file;
-            csReturnToList = true;
-            swapModal('csFileModal', () => {
-                const { base, ext } = csSplitName(file.name);
-                document.getElementById('csEdName').value = base;
-                const extEl = document.getElementById('csEdExt');
-                extEl.textContent = ext;
-                extEl.classList.toggle('d-none', !ext);
-                const inMonth = !!csCurrentFolder.ym.yearBE;
-                csFillMonthYear('csEdMonth', 'csEdYear', inMonth ? csCurrentFolder.ym.key : csTodayKey());
-                document.getElementById('csEdFolderHint').innerHTML = inMonth
-                    ? `เปลี่ยนเดือนเพื่อย้ายไฟล์ไปโฟลเดอร์อื่น`
-                    : `<span class="text-warning">ไฟล์นี้ยังไม่อยู่ในโฟลเดอร์เดือน เมื่อบันทึกจะย้ายไปเดือนที่เลือก</span>`;
-                document.getElementById('csEdFile').value = '';
-                csShowEditFileInfo();
-                document.getElementById('csEdBy').value = lastActor;
-                document.getElementById('csEdReason').value = '';
-                getModal('csEditModal').show();
-            });
-        }
-
-        function csShowEditFileInfo() {
-            const f = document.getElementById('csEdFile').files[0];
-            const el = document.getElementById('csEdFileInfo');
-            document.getElementById('csEdFileClear').classList.toggle('d-none', !f);
-            if (!f) {
-                el.className = 'small mt-1 text-secondary';
-                el.textContent = 'ใช้เมื่ออัปโหลดไฟล์ผิด ไฟล์เดิมจะถูกย้ายไปถังขยะของ Google Drive';
-            } else if (f.size > CS_MAX_FILE_MB * 1024 * 1024) {
-                el.className = 'small mt-1 text-danger';
-                el.textContent = `ไฟล์ใหญ่เกิน ${CS_MAX_FILE_MB} MB (${fmtSize(f.size)}) กรุณาเลือกไฟล์อื่น`;
-            } else {
-                el.className = 'small mt-1 text-success';
-                el.textContent = `จะเปลี่ยนเป็นไฟล์ "${f.name}" (${fmtSize(f.size)}) ไฟล์เดิมจะถูกย้ายไปถังขยะ`;
-            }
-        }
-
-        async function csSaveEdit() {
-            const file = csEditingFile;
-            if (!file) return;
-            const { ext } = csSplitName(file.name);
-            const base = document.getElementById('csEdName').value.trim();
-            if (!base) { showToast('กรุณาระบุชื่อไฟล์', 'warning'); document.getElementById('csEdName').focus(); return; }
-            const newFile = document.getElementById('csEdFile').files[0] || null;
-            if (newFile && newFile.size > CS_MAX_FILE_MB * 1024 * 1024) { showToast(`ไฟล์ใหม่ใหญ่เกิน ${CS_MAX_FILE_MB} MB`, 'warning'); return; }
-
-            const payload = { action: 'csUpdate', fileId: file.id };
-            if (newFile) payload.newName = base;                       // นามสกุลตามไฟล์ใหม่
-            else if (base + ext !== file.name) payload.newName = base + ext;
-            const key = csReadKey('csEdMonth', 'csEdYear');
-            if (key !== csCurrentFolder.ym.key) {
-                const target = csFindFolderByKey(key);
-                if (target) payload.folderId = target.id; else payload.monthKey = key;
-            }
-            if (!newFile && !payload.newName && !payload.folderId && !payload.monthKey) {
-                showToast('ยังไม่มีการเปลี่ยนแปลง', 'info');
-                return;
-            }
-            const by = document.getElementById('csEdBy').value.trim();
-            if (!by) { showToast('กรุณาระบุชื่อผู้แก้ไข', 'warning'); document.getElementById('csEdBy').focus(); return; }
-            lastActor = by;
-            payload.by = by;
-            payload.reason = document.getElementById('csEdReason').value.trim();
-
-            const btn = document.getElementById('csEdSaveBtn');
-            setBtnLoading(btn, true);
-            try {
-                if (newFile) payload.file = await csFilePayload(newFile);
-                const r = await postAction(payload);
-                showToast('บันทึกการแก้ไขเรียบร้อย', 'success');
-                csReturnToList = false;
-                swapModal('csEditModal', () => csReloadAndOpen(r.folder.id));
-            } catch (e) {
-                showToast(e.message, 'danger');
-            } finally {
-                setBtnLoading(btn, false);
-            }
-        }
-
-        // ---------- ลบไฟล์ ----------
-        function csOpenDelete(file) {
-            if (!file) return;
-            csDeletingFile = file;
-            csReturnToList = true;
-            swapModal('csFileModal', () => {
-                document.getElementById('csDelSummary').innerHTML = `
-                    <div class="view-chip">
-                        <div class="lbl">ไฟล์ที่จะลบ</div>
-                        <div class="text-white fw-bold text-break"><i class="fa-solid ${csFileIcon(file.mimeType, file.name)} me-2"></i>${esc(file.name)}</div>
-                        <div class="small text-secondary mt-1">โฟลเดอร์: <span class="text-white">${esc(csCurrentFolder.name)}</span>${file.size ? ' · ' + fmtSize(file.size) : ''}</div>
-                    </div>`;
-                document.getElementById('csDelBy').value = lastActor;
-                document.getElementById('csDelReason').value = '';
-                getModal('csDeleteModal').show();
-            });
-        }
-
-        async function csConfirmDelete() {
-            const file = csDeletingFile;
-            if (!file) return;
-            const by = document.getElementById('csDelBy').value.trim();
-            if (!by) { showToast('กรุณาระบุชื่อผู้ลบ', 'warning'); document.getElementById('csDelBy').focus(); return; }
-            lastActor = by;
-
-            const btn = document.getElementById('csDelConfirmBtn');
-            setBtnLoading(btn, true);
-            try {
-                const r = await postAction({ action: 'csDelete', fileId: file.id, by, reason: document.getElementById('csDelReason').value.trim() });
-                showToast(r.folderRemoved ? 'ลบไฟล์เรียบร้อย เดือนนี้ไม่มีไฟล์เหลือ จึงลบโฟลเดอร์เดือนออกด้วย' : 'ลบไฟล์เรียบร้อย', 'success');
-                csReturnToList = false;
-                const folderId = r.folderRemoved ? null : csCurrentFolder.id;
-                swapModal('csDeleteModal', () => csReloadAndOpen(folderId));
-            } catch (e) {
-                showToast(e.message, 'danger');
-            } finally {
-                setBtnLoading(btn, false);
-            }
-        }
-
-        // ==========================================
-        // เริ่มทำงาน
-        // ==========================================
-        document.getElementById('csSearchInput').addEventListener('input', renderCSGroups);
-        document.getElementById('csMonthFilter').addEventListener('change', renderCSGroups);
-        document.getElementById('csAddBtn').addEventListener('click', () => csOpenUpload());
-        document.getElementById('csAddHereBtn').addEventListener('click', () => csOpenUpload(csCurrentFolder && csCurrentFolder.ym.yearBE ? csCurrentFolder.ym.key : ''));
-        document.getElementById('csFileList').addEventListener('click', e => {
-            const btn = e.target.closest('button[data-act]');
-            if (!btn) return;
-            const file = csCurrentFiles[Number(btn.dataset.i)];
-            if (btn.dataset.act === 'edit') csOpenEdit(file); else csOpenDelete(file);
         });
-        document.getElementById('csUpMonth').addEventListener('change', csUpdateUploadHint);
-        document.getElementById('csUpYear').addEventListener('change', csUpdateUploadHint);
-        document.getElementById('csUpFiles').addEventListener('change', e => { csAddUploadFiles(e.target.files); e.target.value = ''; });
-        document.getElementById('csUpList').addEventListener('click', e => {
-            const b = e.target.closest('[data-rm]');
-            if (!b || csUploading) return;
-            csUploadItems.splice(Number(b.dataset.rm), 1);
-            csRenderUploadList();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <form id="myForm" class="needs-validation my-4" novalidate autocomplete="off">
+            <div class="row">
+                <div class="col-12 text-center mb-2">
+                    <p class="h2 text-title">ระบบตรวจเช็คระบบน้ำ RO</p>
+                </div>
+                <div class="col-12 profile-box">
+                    <img id="profilePic" class="profile-img d-none" src="" alt="profile">
+                </div>
+            </div>
+            <div class="row justify-content-start g-3">
+                <div class="col-12 col-md-6">
+                    <label for="name"><i class="bi bi-person-circle"></i> ผู้ตรวจสอบ</label>
+                    <input type="text" id="name" name="name" class="form-control" required>
+                    <div class="invalid-feedback">กรุณากรอกชื่อ-สกุล</div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="leaveDate"><i class="bi bi-calendar-event"></i> วันที่</label>
+                    <!-- เพิ่มคลาส datepicker ตรงนี้เพื่อให้กดเลือกวันที่ได้ -->
+                    <input type="text" id="leaveDate" name="leaveDate" class="form-control datepicker" readonly required>
+                    <div class="invalid-feedback">กรุณากรอกวันที่</div>
+                </div>
+            </div>
+            <div class="row gx-3 gy-2 mb-3">
+                <div class="col-md-3"><label for="orp"><i class="bi bi-droplet-half"></i> ORP</label><input type="number" step="0.01" id="orp" name="orp" class="form-control" required></div>
+                <div class="col-md-3"><label for="chlorine"><i class="bi bi-droplet-fill"></i> Chlorine ในน้ำดิบ <small>{0.3-0.5 ppm}</small></label><input type="number" step="0.01" id="chlorine" name="chlorine" class="form-control" required></div>
+                <div class="col-md-3"><label for="feed_pump_pressure"><i class="bi bi-lightning-charge"></i> Feed pump Pressure <small>{> 40 psi}</small></label><input type="number" step="1" id="feed_pump_pressure" name="feed_pump_pressure" class="form-control" required></div>
+                <div class="col-md-3"><label for="sand_pressure"><i class="bi bi-speedometer"></i> Sand pressure <small>{psi}</small></label><input type="number" step="0.01" id="sand_pressure" name="sand_pressure" class="form-control" required></div>
+                <div class="col-md-3">
+                    <label for="sand_clock"><i class="bi bi-clock-history"></i> Sand Clock</label>
+                    <select id="sand_clock" name="sand_clock" class="form-select" required>
+                        <option value="">เลือก</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                    <div class="invalid-feedback">กรุณาเลือก Sand Clock</div>
+                </div>
+                <div class="col-md-3"><label for="softener_pressure"><i class="bi bi-speedometer"></i> water softener pressure <small>{psi}</small></label><input type="number" step="0.01" id="softener_pressure" name="softener_pressure" class="form-control" required></div>
+                <div class="col-md-3">
+                    <label for="softener_clock"><i class="bi bi-clock-history"></i> Softener Clock</label>
+                    <select id="softener_clock" name="softener_clock" class="form-select" required>
+                        <option value="">เลือก</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                    <div class="invalid-feedback">กรุณาเลือก Softener Clock</div>
+                </div>
+                <div class="col-md-3"><label for="softener_brine"><i class="bi bi-box-seam"></i> Softener Brine Tank(ลิตร) <small>(ปริมาณเกลือในถัง 12.5 kg เติมทุกวัน จ,พ,ศ)</small></label><input type="number" step="1" id="softener_brine" name="softener_brine" class="form-control" required></div>
+                <div class="col-md-3"><label for="softener_aquadur"><i class="bi bi-droplet"></i> Softener Aquadur test <small>(Hardness){&lt;17.1 ppm}</small></label><input type="number" step="0.01" id="softener_aquadur" name="softener_aquadur" class="form-control" required></div>
+                <div class="col-md-3"><label for="carbon1_pressure"><i class="bi bi-speedometer"></i> Carbon 1 Pressure <small>{psi}</small></label><input type="number" step="1" id="carbon1_pressure" name="carbon1_pressure" class="form-control" required></div>
+                <div class="col-md-3">
+                    <label for="carbon1_clock"><i class="bi bi-clock-history"></i> Carbon 1 Clock</label>
+                    <select id="carbon1_clock" name="carbon1_clock" class="form-select" required>
+                        <option value="">เลือก</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                    <div class="invalid-feedback">กรุณาเลือก Carbon 1 Clock</div>
+                </div>
+                <div class="col-md-3"><label for="carbon1_chlorine"><i class="bi bi-droplet"></i> Carbon 1 Chlorine test <small>{&lt;0.1 ppm}</small></label><input type="number" step="1" id="carbon1_chlorine" name="carbon1_chlorine" class="form-control" required></div>
+                <div class="col-md-3"><label for="carbon2_pressure"><i class="bi bi-speedometer"></i> Carbon 2 Pressure <small>{psi}</small></label><input type="number" step="1" id="carbon2_pressure" name="carbon2_pressure" class="form-control" required></div>
+                <div class="col-md-3">
+                    <label for="carbon2_clock"><i class="bi bi-clock-history"></i> Carbon 2 Clock</label>
+                    <select id="carbon2_clock" name="carbon2_clock" class="form-select" required>
+                        <option value="">เลือก</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                    <div class="invalid-feedback">กรุณาเลือก Carbon 2 Clock</div>
+                </div>
+                <div class="col-md-3"><label for="carbon2_chlorine"><i class="bi bi-droplet"></i> Carbon 2 Chlorine test <small>{&lt;0.1 ppm}</small></label><input type="number" step="1" id="carbon2_chlorine" name="carbon2_chlorine" class="form-control" required></div>
+                <div class="col-md-3"><label for="cartridge_filter"><i class="bi bi-filter"></i> Cartridge Filter 5 MICRON <small>{psi}</small></label><input type="number" step="1" id="cartridge_filter" name="cartridge_filter" class="form-control" required></div>
+                <div class="col-md-3"><label for="raw_conductivity"><i class="bi bi-activity"></i> RAW Conductiviry <small>{&lt;500 us/cm2}</small></label><input type="number" step="0.01" id="raw_conductivity" name="raw_conductivity" class="form-control" required></div>
+                <div class="col-md-3"><label for="bt_temp"><i class="bi bi-thermometer-half"></i> TEMP. B/T <small>{&lt;35 c}</small></label><input type="number" step="0.01" id="bt_temp" name="bt_temp" class="form-control" required></div>
+                <div class="col-md-3"><label for="ro_pressure_pump"><i class="bi bi-lightning"></i> RO Pressure Pump</label><input type="number" step="1" id="ro_pressure_pump" name="ro_pressure_pump" class="form-control" required></div>
+                <div class="col-md-3"><label for="concentrate_pressure"><i class="bi bi-speedometer"></i> Concentrate Pressure <small>{80-180 psi}</small></label><input type="number" step="1" id="concentrate_pressure" name="concentrate_pressure" class="form-control" required></div>
+                <div class="col-md-3"><label for="permeate_pressure"><i class="bi bi-speedometer"></i> Permeate Pressure <small>{80-180 psi}</small></label><input type="number" step="1" id="permeate_pressure" name="permeate_pressure" class="form-control" required></div>
+                <div class="col-md-3"><label for="permeate_flow"><i class="bi bi-water"></i> Permeate Flow <small>{18-35 LPM}</small></label><input type="number" step="1" id="permeate_flow" name="permeate_flow" class="form-control" required></div>
+                <div class="col-md-3"><label for="concentrate_flow"><i class="bi bi-water"></i> Concentrate Flow <small>{18-35 LPM}</small></label><input type="number" step="1" id="concentrate_flow" name="concentrate_flow" class="form-control" required></div>
+                <div class="col-md-3"><label for="ro_conductivity"><i class="bi bi-activity"></i> Conductiviry RO <small>{&lt;10 us/cm2}</small></label><input type="number" step="0.01" id="ro_conductivity" name="ro_conductivity" class="form-control" required></div>
+                <div class="col-md-3"><label for="salt_rejection"><i class="bi bi-percent"></i> % Salt Rejection <small>{> 90%} (คำนวณอัตโนมัติ)</small></label><input type="number" step="0.01" id="salt_rejection" name="salt_rejection" class="form-control" readonly></div>
+                <div class="col-md-3"><label for="recovery"><i class="bi bi-percent"></i> % Recovery <small>{45-55%} (คำนวณอัตโนมัติ)</small></label><input type="number" step="0.01" id="recovery" name="recovery" class="form-control" readonly></div>
+            </div>
+            <div class="row justify-content-start g-3">
+                <div class="col-12 text-center">
+                    <button type="submit" class="btn three-d-btn w-100 fs-5">
+                        <i class="bi bi-save2"></i>&nbsp;บันทึกข้อมูล
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+    <script>
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyJq6OjRKegT_BK27gUKKeNkHotb_ThaK21-nIuBC8AUmzbiFQDSUOZNAxCAPbQTstg/exec';
+        const liffId = '2007068541-gRmdPVaX';
+        const dashboardUrl = 'https://kool5555.github.io/RODBR22.3/';
+        const liffAppUrl = 'https://liff.line.me/2007068541-gRmdPVaX';
+
+        $(document).ready(function() {
+            const today = new Date();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const yy = String(today.getFullYear()).slice(-2);
+            const todayStr = mm + '/' + dd + '/' + yy;
+            $("#leaveDate").val(todayStr);
+
+            function updateAutoCalc() {
+                let raw = parseFloat($('#raw_conductivity').val());
+                let ro = parseFloat($('#ro_conductivity').val());
+                if (!isNaN(raw) && raw > 0 && !isNaN(ro)) {
+                    let saltRejection = ((raw - ro) / raw) * 100;
+                    $('#salt_rejection').val(saltRejection.toFixed(2));
+                } else {
+                    $('#salt_rejection').val('');
+                }
+                let permeate = parseFloat($('#permeate_flow').val());
+                let concentrate = parseFloat($('#concentrate_flow').val());
+                if (!isNaN(permeate) && !isNaN(concentrate) && permeate + concentrate > 0) {
+                    let recovery = (permeate / (permeate + concentrate)) * 100;
+                    $('#recovery').val(recovery.toFixed(2));
+                } else {
+                    $('#recovery').val('');
+                }
+            }
+            $('#raw_conductivity, #ro_conductivity').on('input', updateAutoCalc);
+            $('#permeate_flow, #concentrate_flow').on('input', updateAutoCalc);
+
+            if(window.liff) {
+                liff.init({
+                    liffId: liffId,
+                    withLoginOnExternalBrowser: true
+                }).then(() => {
+                    liff.getProfile().then(function(profile){
+                        $("#profilePic").attr("src", profile.pictureUrl).removeClass("d-none");
+                        if (!$('#name').val()) $('#name').val(profile.displayName);
+                    });
+                });
+            }
         });
+
         (() => {
-            const drop = document.getElementById('csDrop');
-            ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
-            ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
-            drop.addEventListener('drop', e => { if (e.dataTransfer && e.dataTransfer.files.length) csAddUploadFiles(e.dataTransfer.files); });
-        })();
-        document.getElementById('csUpBtn').addEventListener('click', csDoUpload);
-        document.getElementById('csEdFile').addEventListener('change', csShowEditFileInfo);
-        document.getElementById('csEdFileClear').addEventListener('click', () => { document.getElementById('csEdFile').value = ''; csShowEditFileInfo(); });
-        document.getElementById('csEdSaveBtn').addEventListener('click', csSaveEdit);
-        document.getElementById('csDelConfirmBtn').addEventListener('click', csConfirmDelete);
-        // ยกเลิกการเพิ่ม/แก้ไข/ลบ แล้วกลับไปหน้ารายการไฟล์เดิม
-        ['csUploadModal', 'csEditModal', 'csDeleteModal'].forEach(id => {
-            document.getElementById(id).addEventListener('hidden.bs.modal', () => {
-                if (csReturnToList && csCurrentFolder) { csReturnToList = false; openCSModal(csCurrentFolder); }
+            'use strict'
+            const forms = document.querySelectorAll('.needs-validation');
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    event.preventDefault();
+                    if (!form.checkValidity()) {
+                        event.stopPropagation();
+                        form.classList.add('was-validated');
+                        $('#myForm').find(":invalid").first().focus();
+                    } else {
+                        submit();
+                    }
+                }, false);
             });
-        });
-        document.getElementById('monthFilter').addEventListener('change', e => setMonth(e.target.value));
-        document.getElementById('monthPrev').addEventListener('click', () => stepMonth(-1));
-        document.getElementById('monthNext').addEventListener('click', () => stepMonth(1));
-        document.getElementById('editSaveBtn').addEventListener('click', saveEdit);
-        document.getElementById('deleteConfirmBtn').addEventListener('click', confirmDelete);
+        })();
 
-        window.onload = () => {
-            ['gFeed', 'gSand', 'gC1', 'gC2', 'gSoft', 'gCart'].forEach(id => createGauge(id, 100, false));
-            ['gRoPump', 'gConcPress', 'gPermPress'].forEach(id => createGauge(id, 200, true));
-            
-            loadData();
-            setTimeout(() => { loadCSFoldersViaFetch(); }, 500);
+        function submit() {
+            $.LoadingOverlay('show');
+            if (window.liff && liff.getProfile && liff.getDecodedIDToken) {
+                liff.init({
+                    liffId: liffId,
+                    withLoginOnExternalBrowser: true
+                }).then(() => {
+                    liff.getProfile().then(function(profile){
+                        const uid = liff.getDecodedIDToken().sub;
+                        const data = {
+                            opt: 'savedata',
+                            uid: uid,
+                            name: $('#name').val(),
+                            orp: parseFloat($('#orp').val()) || 0,
+                            chlorine: parseFloat($('#chlorine').val()) || 0,
+                            feed_pump_pressure: parseFloat($('#feed_pump_pressure').val()) || 0,
+                            sand_pressure: parseFloat($('#sand_pressure').val()) || 0,
+                            sand_clock: $('#sand_clock').val(),
+                            softener_pressure: parseFloat($('#softener_pressure').val()) || 0,
+                            softener_clock: $('#softener_clock').val(),
+                            softener_brine: parseFloat($('#softener_brine').val()) || 0,
+                            softener_aquadur: parseFloat($('#softener_aquadur').val()) || 0,
+                            carbon1_pressure: parseFloat($('#carbon1_pressure').val()) || 0,
+                            carbon1_clock: $('#carbon1_clock').val(),
+                            carbon1_chlorine: parseFloat($('#carbon1_chlorine').val()) || 0,
+                            carbon2_pressure: parseFloat($('#carbon2_pressure').val()) || 0,
+                            carbon2_clock: $('#carbon2_clock').val(),
+                            carbon2_chlorine: parseFloat($('#carbon2_chlorine').val()) || 0,
+                            cartridge_filter: parseFloat($('#cartridge_filter').val()) || 0,
+                            raw_conductivity: parseFloat($('#raw_conductivity').val()) || 0,
+                            bt_temp: parseFloat($('#bt_temp').val()) || 0,
+                            ro_pressure_pump: parseFloat($('#ro_pressure_pump').val()) || 0,
+                            concentrate_pressure: parseFloat($('#concentrate_pressure').val()) || 0,
+                            permeate_pressure: parseFloat($('#permeate_pressure').val()) || 0,
+                            permeate_flow: parseFloat($('#permeate_flow').val()) || 0,
+                            concentrate_flow: parseFloat($('#concentrate_flow').val()) || 0,
+                            ro_conductivity: parseFloat($('#ro_conductivity').val()) || 0,
+                            salt_rejection: parseFloat($('#salt_rejection').val()) || 0,
+                            recovery: parseFloat($('#recovery').val()) || 0
+                        };
+                        $.ajax({
+                            method: "POST",
+                            url: scriptUrl,
+                            data: data,
+                            dataType: 'json',
+                            success: function (res) {
+                                $.LoadingOverlay('hide');
+                                if(res && res.status === "success") {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'บันทึกข้อมูลสำเร็จ',
+                                        allowOutsideClick: false,
+                                        confirmButtonText: 'ตกลง'
+                                    }).then(() => {
+                                        let flex = sendROFlex(profile, data);
+                                        liff.sendMessages([flex]).then(() => {
+                                            liff.closeWindow();
+                                        }).catch(() => {
+                                            liff.closeWindow();
+                                        });
+                                    });
+                                }
+                                else {
+                                    return Swal.fire({
+                                        icon: 'error',
+                                        title: 'เกิดข้อผิดพลาด',
+                                        allowOutsideClick: false,
+                                        confirmButtonText: 'ตกลง'
+                                    });
+                                }
+                            },
+                            error: function (err) {
+                                $.LoadingOverlay('hide');
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'บันทึกข้อมูลไม่สำเร็จ',
+                                    allowOutsideClick: false,
+                                    confirmButtonText: 'ตกลง'
+                                });
+                            }
+                        });
+                    });
+                });
+            } else {
+                $.LoadingOverlay('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'บันทึกข้อมูลสำเร็จ',
+                    html: '<pre style="text-align:left;">' + JSON.stringify(data, null, 2) + '</pre>',
+                    confirmButtonText: 'ตกลง'
+                });
+            }
+        }
 
-            window.addEventListener('resize', () => { Object.values(gauges).forEach(g => g.resize()); if(monthlyChart) monthlyChart.resize(); if(rawChart) rawChart.resize(); });
-        };
+        // ฟังก์ชันสร้าง Flex Message (อัปเดตเพิ่ม Link พร้อมระยะห่าง)
+        function sendROFlex(profile, data) {
+            let flex = {
+                type: 'flex',
+                altText: 'บันทึกข้อมูลตรวจสอบน้ำ RO',
+                contents: {
+                    type: "bubble",
+                    body: {
+                        type: "box",
+                        layout: "vertical",
+                        contents: [
+                            {
+                                type: "box",
+                                layout: "horizontal",
+                                contents: [
+                                    {
+                                        type: "box",
+                                        layout: "vertical",
+                                        contents: [
+                                            {
+                                                type: "image",
+                                                url: profile.pictureUrl,
+                                                aspectMode: "cover",
+                                                size: "full"
+                                            }
+                                        ],
+                                        cornerRadius: "100px",
+                                        width: "72px",
+                                        height: "72px"
+                                    },
+                                    {
+                                        type: "box",
+                                        layout: "vertical",
+                                        contents: [
+                                            {
+                                                type: "text",
+                                                contents: [
+                                                    {
+                                                        type: "span",
+                                                        text: " " + data.name,
+                                                        weight: "bold",
+                                                        color: "#000000"
+                                                    }
+                                                ],
+                                                size: "sm",
+                                                wrap: true
+                                            },
+                                            {
+                                                type: "box",
+                                                layout: "vertical",
+                                                contents: [
+                                                    {
+                                                        type: "text",
+                                                        text: "รายงานระบบน้ำ RO 💧🧪",
+                                                        size: "sm",
+                                                        color: "#3cc8a3",
+                                                        weight: "bold",
+                                                        action: {
+                                                            type: "uri",
+                                                            label: "รายงานระบบน้ำ RO",
+                                                            uri: dashboardUrl
+                                                        }
+                                                    },
+                                                    // ---- เพิ่มลิงก์: ผลเพาะเชื้อระบบน้ำ RO (มี margin ด้านบนเพื่อความห่าง) ----
+                                                    {
+                                                        type: "text",
+                                                        text: "🦠 ผลเพาะเชื้อระบบน้ำ RO",
+                                                        size: "sm",
+                                                        color: "#25675a",
+                                                        weight: "bold",
+                                                        margin: "md",
+                                                        action: {
+                                                            type: "uri",
+                                                            label: "ผลเพาะเชื้อระบบน้ำ RO",
+                                                            uri: "https://script.google.com/macros/s/AKfycbzptYcP1_hTPxdSGqAwikSfp0wzty-U1GIZadyAu552TvNUbue-H5upbnI8yDYSG-HP/exec"
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ],
+                                spacing: "xl",
+                                paddingAll: "20px",
+                                backgroundColor: "#c2f5e9"
+                            },
+                            {
+                                type: "box",
+                                layout: "vertical",
+                                contents: [
+                                    {
+                                        type: "text",
+                                        text: "📆 วันที่ : " + ($("#leaveDate").val() || ""),
+                                        size: "sm",
+                                        weight: "bold",
+                                        color: "#25675a"
+                                    },
+                                    {
+                                        type: "separator",
+                                        margin: "md"
+                                    },
+                                    {
+                                        type: "box",
+                                        layout: "vertical",
+                                        margin: "md",
+                                        spacing: "sm",
+                                        contents: [
+                                            {
+                                                type: "text",
+                                                text: "🩸 ORP : " + data.orp ,
+                                                size: "sm"
+                                            },
+                                            {
+                                                type: "text",
+                                                text: "💧 Chlorine ในน้ำดิบ : " + data.chlorine ,
+                                                size: "sm"
+                                            },
+                                            {
+                                                type: "text",
+                                                text: "💧 Hardness : " + data.softener_aquadur + " ppm ",
+                                                size: "sm"
+                                            },
+                                            {
+                                                type: "text",
+                                                text: "Chlorine หลัง Carbon1 : " + data.carbon1_chlorine,
+                                                size: "sm"
+                                            },
+                                            {
+                                                type: "text",
+                                                text: "Chlorine หลัง Carbon2 : " + data.carbon2_chlorine,
+                                                size: "sm"
+                                            },
+                                            {
+                                                type: "text",
+                                                text: "🌊 RAW Conductivity : " + data.raw_conductivity,
+                                                size: "sm"
+                                            },
+                                            {
+                                                type: "text",
+                                                text: "📉 RO Conductivity : " + data.ro_conductivity,
+                                                size: "sm"
+                                            },
+                                            {
+                                                type: "text",
+                                                text: " % Salt Rejection: " + data.salt_rejection + " %",
+                                                size: "sm"
+                                            },
+                                            {
+                                                type: "text",
+                                                text: " % Recovery: " + data.recovery + " %",
+                                                size: "sm"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                spacing: "xs",
+                                paddingAll: "14px"
+                            }
+                        ],
+                        paddingAll: "0px"
+                    },
+                    footer: {
+                        "type": "box",
+                        "layout": "vertical",
+                        "spacing": "lg", // เพิ่มระยะห่างระหว่างรายการใน Footer
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "ตรวจสอบระบบน้ำ RO",
+                                "weight": "bold",
+                                "align": "center",
+                                "color": "#25675a",
+                                "action": {
+                                    "type": "uri",
+                                    "label": "ตรวจสอบระบบน้ำ RO",
+                                    "uri": liffAppUrl
+                                }
+                            },
+                            // ---- เพิ่มลิงก์: ตารางเวร On call ----
+                            {
+                                "type": "text",
+                                "text": "📅 ตารางเวร On call",
+                                "weight": "bold",
+                                "align": "center",
+                                "color": "#39b7b1",
+                                "action": {
+                                    "type": "uri",
+                                    "label": "ตารางเวร On call",
+                                    "uri": "https://kool5555.github.io/shiffR22.3/"
+                                }
+                            }
+                        ]
+                    },
+                    styles: {
+                        body: {
+                            backgroundColor: "#b0f4e6"
+                        }
+                    }
+                }
+            };
+            return flex;
+        }
     </script>
 </body>
 </html>
